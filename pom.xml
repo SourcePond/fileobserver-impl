@@ -23,7 +23,7 @@
 		<dependencies>
 			<dependency>
 				<groupId>ch.sourcepond.utils</groupId>
-				<artifactId>fileobserver</artifactId>
+				<artifactId>fileobserver-api</artifactId>
 				<version>${fileobserver-api.version}</version>
 			</dependency>
 		</dependencies>
@@ -36,7 +36,7 @@
 		</dependency>
 		<dependency>
 			<groupId>ch.sourcepond.utils</groupId>
-			<artifactId>fileobserver</artifactId>
+			<artifactId>fileobserver-api</artifactId>
 		</dependency>
 
 		<!-- Testing -->
