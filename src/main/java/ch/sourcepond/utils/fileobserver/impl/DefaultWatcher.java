@@ -194,7 +194,7 @@ final class DefaultWatcher extends ClosableResource implements Watcher, Runnable
 		} catch (final InterruptedException e) {
 			LOG.error(e.getMessage(), e);
 		} catch (final ClosedWatchServiceException e) {
-			LOG.warn(e.getMessage(), e);
+			LOG.debug(e.getMessage(), e);
 		} finally {
 			try {
 				close();
