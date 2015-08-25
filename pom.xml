@@ -31,6 +31,10 @@
 
 	<dependencies>
 		<dependency>
+			<groupId>org.osgi</groupId>
+			<artifactId>org.osgi.core</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>ch.sourcepond.utils</groupId>
 			<artifactId>fileobserver</artifactId>
 		</dependency>
