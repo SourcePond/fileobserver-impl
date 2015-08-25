@@ -1,0 +1,52 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<parent>
+		<groupId>ch.sourcepond</groupId>
+		<artifactId>parent</artifactId>
+		<version>1.0.0-SNAPSHOT</version>
+	</parent>
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>ch.sourcepond.utils</groupId>
+	<artifactId>fileobserver-impl</artifactId>
+	<version>1.0.0-SNAPSHOT</version>
+	<inceptionYear>2015</inceptionYear>
+	<packaging>bundle</packaging>
+	<description>
+		Simple observer
+	</description>
+
+	<properties>
+		<fileobserver-api.version>1.0.0-SNAPSHOT</fileobserver-api.version>
+	</properties>
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>ch.sourcepond.utils</groupId>
+				<artifactId>fileobserver</artifactId>
+				<version>${fileobserver-api.version}</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
+	<dependencies>
+		<dependency>
+			<groupId>ch.sourcepond.utils</groupId>
+			<artifactId>fileobserver</artifactId>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.felix</groupId>
+				<artifactId>maven-bundle-plugin</artifactId>
+				<configuration>
+					<instructions>
+						<Bundle-Activator>ch.sourcepond.utils.fileobserver.impl.WatchManagerActivator</Bundle-Activator>
+					</instructions>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+</project>
