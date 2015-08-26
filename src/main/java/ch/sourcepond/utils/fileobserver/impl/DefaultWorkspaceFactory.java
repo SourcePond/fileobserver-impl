@@ -27,7 +27,6 @@ import javax.inject.Singleton;
 import ch.sourcepond.utils.fileobserver.WorkspaceFactory;
 
 /**
- * @author rolandhauser
  *
  */
 @Named // Necessary to let Eclipse Sisu discover this class
@@ -61,24 +60,24 @@ public class DefaultWorkspaceFactory implements WorkspaceFactory, CloseObserver<
 	 * @throws IOException
 	 */
 	@Override
-	public DefaultWorkspace create(final Path pWorkspace, final ExecutorService pObserverInformExecutor)
+	public DefaultWorkspace create(final Path pWorkspace, final ExecutorService pAsynListenerExecutor)
 			throws IOException {
-		return create(pWorkspace, pObserverInformExecutor, this);
+		return create(pWorkspace, pAsynListenerExecutor, this);
 	}
 
 	/**
 	 * @param pWorkspace
 	 * @param pObserverInformExecutor
-	 * @param pCallback
+	 * @param pCloseObserver
 	 * @return
 	 * @throws WorkspaceLockedException
 	 * @throws IOException
 	 */
-	DefaultWorkspace create(final Path pWorkspace, final ExecutorService pObserverInformExecutor,
-			final CloseObserver<DefaultWorkspace> pCallback) throws IOException {
+	DefaultWorkspace create(final Path pWorkspace, final ExecutorService pAsynListenerExecutor,
+			final CloseObserver<DefaultWorkspace> pCloseObserver) throws IOException {
 		// Create workspace instance
 		final DefaultWorkspace workspace = new DefaultWorkspace(runtime, new CloseState(), pWorkspace, taskFactory,
-				pObserverInformExecutor, pCallback, new HashMap<URL, DefaultResource>(),
+				pAsynListenerExecutor, pCloseObserver, new HashMap<URL, DefaultResource>(),
 				new ConcurrentHashMap<Path, DefaultResource>());
 
 		// Create and set all necessary threads on workspace

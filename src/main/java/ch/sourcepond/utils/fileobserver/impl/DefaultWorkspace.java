@@ -77,6 +77,15 @@ final class DefaultWorkspace implements Workspace, Runnable {
 			final CloseObserver<DefaultWorkspace> pCloseObserver,
 			final Map<URL, DefaultResource> pManagedResourcesCache,
 			final ConcurrentMap<Path, DefaultResource> pWatcherThreadCache) throws IOException {
+		assert pRuntime != null;
+		assert pState != null;
+		assert pWorkspace != null;
+		assert pTaskFactory != null;
+		assert pAsynListenerExecutor != null;
+		assert pCloseObserver != null;
+		assert pManagedResourcesCache != null;
+		assert pWatcherThreadCache != null;
+
 		runtime = pRuntime;
 		state = pState;
 		workspace = pWorkspace;
