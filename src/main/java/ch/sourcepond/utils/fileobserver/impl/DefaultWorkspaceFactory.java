@@ -14,7 +14,10 @@ limitations under the License.*/
 package ch.sourcepond.utils.fileobserver.impl;
 
 import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 
 import javax.inject.Inject;
@@ -74,8 +77,9 @@ public class DefaultWorkspaceFactory implements WorkspaceFactory, CloseObserver<
 	DefaultWorkspace create(final Path pWorkspace, final ExecutorService pObserverInformExecutor,
 			final CloseObserver<DefaultWorkspace> pCallback) throws IOException {
 		// Create workspace instance
-		final DefaultWorkspace workspace = new DefaultWorkspace(runtime, pWorkspace, taskFactory,
-				pObserverInformExecutor, pCallback);
+		final DefaultWorkspace workspace = new DefaultWorkspace(runtime, new CloseState(), pWorkspace, taskFactory,
+				pObserverInformExecutor, pCallback, new HashMap<URL, DefaultResource>(),
+				new ConcurrentHashMap<Path, DefaultResource>());
 
 		// Create and set all necessary threads on workspace
 		final Thread watcherThread = threadFactory.newWatcher(workspace, pWorkspace);

@@ -37,26 +37,24 @@ import ch.sourcepond.utils.fileobserver.ResourceEvent;
  * @author rolandhauser
  *
  */
-final class DefaultResource implements Resource, Closeable {
+class DefaultResource implements Resource, Closeable {
 	private static final Logger LOG = getLogger(DefaultResource.class);
 	private final Set<ResourceChangeListener> listeners = new HashSet<>();
 	private final ExecutorService asynListenerExecutor;
 	private final TaskFactory taskFactory;
 	private final URL originContent;
 	private final Path storagePath;
-	private final CloseObserver<DefaultResource> closeObserver;
 	private boolean closed;
 
 	/**
 	 * @param pOrigin
 	 */
 	DefaultResource(final ExecutorService pAsynListenerExecutor, final TaskFactory pTaskFactory,
-			final URL pOriginalContent, final Path pStoragePath, final CloseObserver<DefaultResource> pCloseObserver) {
+			final URL pOriginalContent, final Path pStoragePath) {
 		asynListenerExecutor = pAsynListenerExecutor;
 		taskFactory = pTaskFactory;
 		originContent = pOriginalContent;
 		storagePath = pStoragePath;
-		closeObserver = pCloseObserver;
 	}
 
 	/**
@@ -163,18 +161,14 @@ final class DefaultResource implements Resource, Closeable {
 	 */
 	@Override
 	public void close() {
-		boolean executeObserver = false;
 		synchronized (listeners) {
 			if (!closed) {
 				for (final ResourceChangeListener listener : listeners) {
 					fireEvent(listener, new ResourceEvent(this, LISTENER_REMOVED));
 				}
-				executeObserver = closed = true;
+				closed = true;
 				listeners.clear();
 			}
-		}
-		if (executeObserver) {
-			closeObserver.closed(this);
 		}
 	}
 

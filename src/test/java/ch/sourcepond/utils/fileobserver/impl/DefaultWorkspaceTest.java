@@ -5,10 +5,15 @@ import static java.nio.file.StandardOpenOption.WRITE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
@@ -17,40 +22,20 @@ import java.io.OutputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
-import java.nio.file.FileSystem;
-import java.nio.file.Path;
-import java.nio.file.WatchService;
-import java.nio.file.spi.FileSystemProvider;
-import java.util.concurrent.ExecutorService;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;
 
+import ch.sourcepond.utils.fileobserver.Resource;
+
 /**
  * @author rolandhauser
  *
  */
-public class DefaultWorkspaceTest {
-	private static final String DIR_1 = "dir1";
-	private static final String DIR_2 = "dir2";
-	private static final String FILE = "file";
+public class DefaultWorkspaceTest extends BaseDefaultWorkspaceTest {
 	private final Thread shutdownHook = mock(Thread.class);
-	private final Thread watcherThread = mock(Thread.class);
-	private final Runtime runtime = mock(Runtime.class);
-	private final FileSystem fs = mock(FileSystem.class);
-	private final FileSystemProvider provider = mock(FileSystemProvider.class);
-	private final WatchService watchService = mock(WatchService.class);
-	private final Path workspacePath = mock(Path.class);
-	private final Path dir1 = mock(Path.class);
-	private final Path dir2 = mock(Path.class);
-	private final Path file = mock(Path.class);
-	private final Path absoluteFile = mock(Path.class);
 	private final OutputStream fileOut = mock(OutputStream.class);
-	private final TaskFactory taskFactory = mock(TaskFactory.class);
-	private final ExecutorService executor = mock(ExecutorService.class);
-	@SuppressWarnings("unchecked")
-	private final CloseObserver<DefaultWorkspace> closeObserver = mock(CloseObserver.class);
 	private final InputStream originContentStream = mock(InputStream.class);
 	private final URLConnection originContentConn = mock(URLConnection.class);
 	private final URLStreamHandler originContentHandler = new URLStreamHandler() {
@@ -61,7 +46,6 @@ public class DefaultWorkspaceTest {
 		}
 	};
 	private URL originContent;
-	private DefaultWorkspace workspace;
 
 	/**
 	 * @throws IOException
@@ -84,12 +68,21 @@ public class DefaultWorkspaceTest {
 		when(file.toAbsolutePath()).thenReturn(absoluteFile);
 		when(absoluteFile.getFileSystem()).thenReturn(fs);
 
-		workspace = new DefaultWorkspace(runtime, workspacePath, taskFactory, executor, closeObserver);
-		workspace.setWatcherThread(watcherThread);
 		workspace.setShutdownHook(shutdownHook);
 
 		when(originContentConn.getInputStream()).thenReturn(originContentStream);
 		originContent = new URL("http", "example.com", 29395, "any/content.properties", originContentHandler);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * ch.sourcepond.utils.fileobserver.impl.BaseDefaultWorkspaceTest#newState()
+	 */
+	@Override
+	protected CloseState newState() {
+		return new CloseState();
 	}
 
 	/**
@@ -182,5 +175,129 @@ public class DefaultWorkspaceTest {
 		// Once created a resource must be shared
 		assertSame(res, workspace.watchFile(originContent, false, DIR_1, DIR_2, FILE));
 		order.verifyNoMoreInteractions();
+	}
+
+	/**
+	 * 
+	 */
+	@Test
+	public void verifyCloseClearCaches() throws IOException {
+		when(provider.newOutputStream(file, CREATE_NEW, WRITE)).thenReturn(fileOut);
+		workspace.watchFile(originContent, DIR_1, DIR_2, FILE);
+		assertEquals(1, managedResourcesCache.size());
+		assertEquals(1, watcherThreadCache.size());
+
+		// This should remove the resource from the internal caches
+		workspace.close();
+		assertTrue(managedResourcesCache.isEmpty());
+		assertTrue(watcherThreadCache.isEmpty());
+	}
+
+	/**
+	 * 
+	 */
+	@Test
+	public void verifyCloseInterruptWatcherThread() {
+		workspace.close();
+
+		// Should have no effect
+		workspace.close();
+		verify(watcherThread).interrupt();
+	}
+
+	/**
+	 * 
+	 */
+	@Test
+	public void verifyWatcherThreadAlreadyInterrupted() {
+		when(watcherThread.isInterrupted()).thenReturn(true);
+		workspace.close();
+
+		// Should have no effect
+		workspace.close();
+		verify(watcherThread, never()).interrupt();
+	}
+
+	/**
+	 * 
+	 */
+	@Test
+	public void verifyRemoveShutdownHook() {
+		workspace.close();
+
+		// Should have no effect
+		workspace.close();
+		verify(runtime).removeShutdownHook(shutdownHook);
+	}
+
+	/**
+	 * 
+	 */
+	@Test
+	public void verifyNoExceptionWhenVmShuttingDown() {
+		final IllegalStateException expected = new IllegalStateException();
+		doThrow(expected).when(runtime).removeShutdownHook(shutdownHook);
+
+		// This should not cause an exception to be thrown
+		workspace.close();
+	}
+
+	/**
+	 * @throws IOException
+	 */
+	@Test
+	public void verifyCloseWatchService() throws IOException {
+		workspace.close();
+
+		// Should have no effect
+		workspace.close();
+
+		verify(watchService).close();
+	}
+
+	/**
+	 * @throws IOException
+	 */
+	@Test
+	public void verifyCloseWatchServiceHasThrownException() throws IOException {
+		doThrow(IOException.class).when(watchService).close();
+
+		// Should not cause an exception to be thrown.
+		workspace.close();
+
+		verify(watchService).close();
+	}
+
+	/**
+	 * @throws IOException
+	 */
+	@Test
+	public void verifyCloseInformObserver() throws IOException {
+		workspace.close();
+
+		// Should have no effect
+		workspace.close();
+
+		verify(closeObserver).closed(workspace);
+	}
+
+	/**
+	 * @throws IOException
+	 */
+	@Test
+	public void verifyCloseResources() throws IOException {
+		when(provider.newOutputStream(file, CREATE_NEW, WRITE)).thenReturn(fileOut);
+		final Resource res = workspace.watchFile(originContent, DIR_1, DIR_2, FILE);
+		workspace.close();
+
+		// Should have no effect
+		workspace.close();
+
+		try {
+			res.open();
+			fail("Exception expected here");
+		} catch (final IllegalStateException expected) {
+			// expected
+		}
 	}
 }

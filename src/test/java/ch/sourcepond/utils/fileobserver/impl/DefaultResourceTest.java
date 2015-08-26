@@ -65,7 +65,6 @@ public class DefaultResourceTest {
 	private final Path storagePath = mock(Path.class);
 	private final InputStream in = mock(InputStream.class);
 	private final ResourceChangeListener listener = mock(ResourceChangeListener.class);
-	private final CloseObserver<DefaultResource> observer = mock(CloseObserver.class);
 	private final Runnable listenerTask = mock(Runnable.class);
 	private URL originContent;
 	private DefaultResource resource;
@@ -78,7 +77,7 @@ public class DefaultResourceTest {
 		when(fs.provider()).thenReturn(provider);
 		when(storagePath.getFileSystem()).thenReturn(fs);
 		originContent = new URL("file:///anyResource");
-		resource = new DefaultResource(executor, taskFactory, originContent, storagePath, observer);
+		resource = new DefaultResource(executor, taskFactory, originContent, storagePath);
 	}
 
 	/**
@@ -206,16 +205,15 @@ public class DefaultResourceTest {
 		when(taskFactory.newObserverTask(Mockito.eq(listener), event(LISTENER_REMOVED))).thenReturn(r2);
 		resource.close();
 
-		final InOrder order = inOrder(taskFactory, executor, observer);
+		final InOrder order = inOrder(taskFactory, executor);
 		order.verify(taskFactory).newObserverTask(Mockito.eq(listener), event(LISTENER_ADDED));
 		order.verify(executor).execute(r1);
 		order.verify(taskFactory).newObserverTask(Mockito.eq(listener), event(LISTENER_REMOVED));
 		order.verify(executor).execute(r2);
-		order.verify(observer).closed(resource);
 
 		// Further close should not have any effect
 		resource.close();
-		verifyNoMoreInteractions(taskFactory, executor, observer);
+		verifyNoMoreInteractions(taskFactory, executor);
 	}
 
 	/**
