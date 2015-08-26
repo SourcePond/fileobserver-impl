@@ -44,7 +44,7 @@ final class DefaultResource implements Resource, Closeable {
 	private final TaskFactory taskFactory;
 	private final URL originContent;
 	private final Path storagePath;
-	private final CloseObserver<DefaultResource> callback;
+	private final CloseObserver<DefaultResource> closeObserver;
 	private boolean closed;
 
 	/**
@@ -56,7 +56,7 @@ final class DefaultResource implements Resource, Closeable {
 		taskFactory = pTaskFactory;
 		originContent = pOriginalContent;
 		storagePath = pStoragePath;
-		callback = pCallback;
+		closeObserver = pCallback;
 	}
 
 	/**
@@ -174,7 +174,7 @@ final class DefaultResource implements Resource, Closeable {
 			}
 		}
 		if (executeObserver) {
-			callback.closed(this);
+			closeObserver.closed(this);
 		}
 	}
 

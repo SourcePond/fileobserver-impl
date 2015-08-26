@@ -63,7 +63,7 @@ final class DefaultWorkspace implements Workspace, Runnable, CloseObserver<Defau
 	private final TaskFactory taskFactory;
 	private final ExecutorService informObserverExector;
 	private final WatchService watchService;
-	private final CloseObserver<DefaultWorkspace> callback;
+	private final CloseObserver<DefaultWorkspace> closeObserver;
 
 	/**
 	 * @param pWorkspace
@@ -77,7 +77,7 @@ final class DefaultWorkspace implements Workspace, Runnable, CloseObserver<Defau
 		workspace = pWorkspace;
 		taskFactory = pTaskFactory;
 		informObserverExector = pInformObserverExector;
-		callback = pCallback;
+		closeObserver = pCallback;
 		watchService = pWorkspace.getFileSystem().newWatchService();
 		watcherThread = new Thread(this, getClass().getSimpleName() + ": " + workspace.toAbsolutePath());
 		watcherThread.start();
@@ -187,7 +187,7 @@ final class DefaultWorkspace implements Workspace, Runnable, CloseObserver<Defau
 				watcherThread.interrupt();
 			}
 			try {
-				callback.closed(this);
+				closeObserver.closed(this);
 			} catch (final Exception e) {
 				LOG.debug(e.getMessage(), e);
 			} finally {
