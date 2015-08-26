@@ -22,7 +22,6 @@ import javax.inject.Named;
 import javax.inject.Singleton;
 
 import ch.sourcepond.utils.fileobserver.WorkspaceFactory;
-import ch.sourcepond.utils.fileobserver.WorkspaceLockedException;
 
 /**
  * @author rolandhauser
@@ -60,7 +59,7 @@ public class DefaultWorkspaceFactory implements WorkspaceFactory, CloseObserver<
 	 */
 	@Override
 	public DefaultWorkspace create(final Path pWorkspace, final ExecutorService pObserverInformExecutor)
-			throws WorkspaceLockedException, IOException {
+			throws IOException {
 		return create(pWorkspace, pObserverInformExecutor, this);
 	}
 
@@ -73,7 +72,7 @@ public class DefaultWorkspaceFactory implements WorkspaceFactory, CloseObserver<
 	 * @throws IOException
 	 */
 	DefaultWorkspace create(final Path pWorkspace, final ExecutorService pObserverInformExecutor,
-			final CloseObserver<DefaultWorkspace> pCallback) throws WorkspaceLockedException, IOException {
+			final CloseObserver<DefaultWorkspace> pCallback) throws IOException {
 		// Create workspace instance
 		final DefaultWorkspace workspace = new DefaultWorkspace(runtime, pWorkspace, taskFactory,
 				pObserverInformExecutor, pCallback);

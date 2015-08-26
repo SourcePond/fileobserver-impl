@@ -28,7 +28,6 @@ import org.slf4j.Logger;
 
 import ch.sourcepond.utils.fileobserver.Workspace;
 import ch.sourcepond.utils.fileobserver.WorkspaceFactory;
-import ch.sourcepond.utils.fileobserver.WorkspaceLockedException;
 
 /**
  *
@@ -82,8 +81,7 @@ public final class WatchManagerActivator implements BundleActivator, WorkspaceFa
 	 * Path, java.util.concurrent.ExecutorService)
 	 */
 	@Override
-	public Workspace create(final Path pWorkspace, final ExecutorService pExecutor)
-			throws WorkspaceLockedException, IOException {
+	public Workspace create(final Path pWorkspace, final ExecutorService pExecutor) throws IOException {
 		final DefaultWorkspace workspace = factory.create(pWorkspace, pExecutor, this);
 		synchronized (workspaces) {
 			workspaces.add(workspace);
