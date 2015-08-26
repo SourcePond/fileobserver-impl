@@ -15,7 +15,7 @@ class ThreadFactory {
 	 * @return
 	 */
 	Thread newWatcher(final Runnable pWorkspace, final Path pWorkspacePath) {
-		return new Thread(pWorkspace, getClass().getSimpleName() + ": " + pWorkspacePath.toAbsolutePath());
+		return new Thread(pWorkspace, Workspace.class.getSimpleName() + ": " + pWorkspacePath.toAbsolutePath());
 	}
 
 	/**

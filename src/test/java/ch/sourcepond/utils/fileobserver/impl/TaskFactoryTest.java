@@ -15,11 +15,11 @@ import ch.sourcepond.utils.fileobserver.ResourceEvent.Type;
  * @author rolandhauser
  *
  */
-public class InformListenerTaskTest {
+public class TaskFactoryTest {
 	private final Resource resource = mock(Resource.class);
 	private final ResourceChangeListener listener = mock(ResourceChangeListener.class);
 	private final ResourceEvent event = new ResourceEvent(resource, Type.RESOURCE_CREATED);
-	private final InformListenerTask task = new InformListenerTask(listener, event);
+	private final Runnable task = new TaskFactory().newObserverTask(listener, event);
 
 	/**
 	 * 
