@@ -32,6 +32,7 @@ import ch.sourcepond.utils.fileobserver.WorkspaceLockedException;
 @Singleton
 public class DefaultWorkspaceFactory implements WorkspaceFactory, CloseObserver<DefaultWorkspace> {
 	private final Runtime runtime;
+	private final ThreadFactory threadFactory;
 	private final TaskFactory taskFactory;
 
 	/**
@@ -39,14 +40,16 @@ public class DefaultWorkspaceFactory implements WorkspaceFactory, CloseObserver<
 	 */
 	@Inject
 	public DefaultWorkspaceFactory() {
-		this(Runtime.getRuntime(), new TaskFactory());
+		this(Runtime.getRuntime(), new ThreadFactory(), new TaskFactory());
 	}
 
 	/**
 	 * @param pFs
 	 */
-	DefaultWorkspaceFactory(final Runtime pRuntime, final TaskFactory pTaskFactory) {
+	DefaultWorkspaceFactory(final Runtime pRuntime, final ThreadFactory pThreadFactory,
+			final TaskFactory pTaskFactory) {
 		runtime = pRuntime;
+		threadFactory = pThreadFactory;
 		taskFactory = pTaskFactory;
 	}
 
@@ -71,7 +74,20 @@ public class DefaultWorkspaceFactory implements WorkspaceFactory, CloseObserver<
 	 */
 	DefaultWorkspace create(final Path pWorkspace, final ExecutorService pObserverInformExecutor,
 			final CloseObserver<DefaultWorkspace> pCallback) throws WorkspaceLockedException, IOException {
-		return new DefaultWorkspace(runtime, pWorkspace, taskFactory, pObserverInformExecutor, pCallback);
+		// Create workspace instance
+		final DefaultWorkspace workspace = new DefaultWorkspace(runtime, pWorkspace, taskFactory,
+				pObserverInformExecutor, pCallback);
+
+		// Create and set all necessary threads on workspace
+		final Thread watcherThread = threadFactory.newWatcher(workspace, pWorkspace);
+		final Thread shutdownHook = threadFactory.newShutdownHook(workspace);
+		workspace.setWatcherThread(watcherThread);
+		workspace.setShutdownHook(shutdownHook);
+
+		// Start the watcher thread
+		watcherThread.start();
+
+		return workspace;
 	}
 
 	/*

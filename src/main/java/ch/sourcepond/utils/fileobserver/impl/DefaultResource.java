@@ -40,7 +40,7 @@ import ch.sourcepond.utils.fileobserver.ResourceEvent;
 final class DefaultResource implements Resource, Closeable {
 	private static final Logger LOG = getLogger(DefaultResource.class);
 	private final Set<ResourceChangeListener> listeners = new HashSet<>();
-	private final ExecutorService executor;
+	private final ExecutorService asynListenerExecutor;
 	private final TaskFactory taskFactory;
 	private final URL originContent;
 	private final Path storagePath;
@@ -51,12 +51,12 @@ final class DefaultResource implements Resource, Closeable {
 	 * @param pOrigin
 	 */
 	DefaultResource(final ExecutorService pAsynListenerExecutor, final TaskFactory pTaskFactory,
-			final URL pOriginalContent, final Path pStoragePath, final CloseObserver<DefaultResource> pCallback) {
-		executor = pAsynListenerExecutor;
+			final URL pOriginalContent, final Path pStoragePath, final CloseObserver<DefaultResource> pCloseObserver) {
+		asynListenerExecutor = pAsynListenerExecutor;
 		taskFactory = pTaskFactory;
 		originContent = pOriginalContent;
 		storagePath = pStoragePath;
-		closeObserver = pCallback;
+		closeObserver = pCloseObserver;
 	}
 
 	/**
@@ -125,7 +125,7 @@ final class DefaultResource implements Resource, Closeable {
 	 * @param pListener
 	 */
 	private void fireEvent(final ResourceChangeListener pListener, final ResourceEvent pEvent) {
-		executor.execute(taskFactory.newObserverTask(pListener, pEvent));
+		asynListenerExecutor.execute(taskFactory.newObserverTask(pListener, pEvent));
 	}
 
 	/**

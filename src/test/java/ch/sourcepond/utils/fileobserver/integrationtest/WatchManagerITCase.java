@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.utils.fileobserver.integrationtest;
 
+import static ch.sourcepond.utils.fileobserver.Constants.TEST_FILE_NAME;
 import static ch.sourcepond.utils.fileobserver.ResourceEvent.Type.LISTENER_ADDED;
 import static ch.sourcepond.utils.fileobserver.ResourceEvent.Type.LISTENER_REMOVED;
 import static java.lang.Thread.sleep;
@@ -61,7 +62,6 @@ public abstract class WatchManagerITCase {
 		}
 	};
 
-	private static final String TEST_FILE_NAME = "test.properties";
 	private static final String KEY = "key";
 	private static final String ADDED_KEY = "addedKey";
 	private static final String ADDED_VALUE = "This content has been added after listener registration";

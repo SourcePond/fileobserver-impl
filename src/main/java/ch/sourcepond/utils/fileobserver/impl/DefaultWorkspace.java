@@ -23,6 +23,7 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 import static java.nio.file.StandardWatchEventKinds.OVERFLOW;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.Validate.notEmpty;
 import static org.apache.commons.lang3.Validate.notNull;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -36,6 +37,7 @@ import java.nio.file.WatchEvent;
 import java.nio.file.WatchEvent.Kind;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -57,13 +59,14 @@ final class DefaultWorkspace implements Workspace, Runnable, CloseObserver<Defau
 	private final Map<URL, DefaultResource> watchedFiles = new HashMap<>();
 	private final Map<Path, DefaultResource> resources = new ConcurrentHashMap<>();
 	private final Runtime runtime;
-	private final Thread watcherThread;
-	private final Thread shutdownHook;
 	private final Path workspace;
 	private final TaskFactory taskFactory;
-	private final ExecutorService informObserverExector;
+	private final ExecutorService asynListenerExecutor;
 	private final WatchService watchService;
 	private final CloseObserver<DefaultWorkspace> closeObserver;
+	private Thread watcherThread;
+	private Thread shutdownHook;
+	private volatile boolean closed;
 
 	/**
 	 * @param pWorkspace
@@ -71,18 +74,33 @@ final class DefaultWorkspace implements Workspace, Runnable, CloseObserver<Defau
 	 * @throws IOException
 	 */
 	DefaultWorkspace(final Runtime pRuntime, final Path pWorkspace, final TaskFactory pTaskFactory,
-			final ExecutorService pInformObserverExector, final CloseObserver<DefaultWorkspace> pCallback)
+			final ExecutorService pAsynListenerExecutor, final CloseObserver<DefaultWorkspace> pCloseObserver)
 					throws IOException {
 		runtime = pRuntime;
 		workspace = pWorkspace;
 		taskFactory = pTaskFactory;
-		informObserverExector = pInformObserverExector;
-		closeObserver = pCallback;
+		asynListenerExecutor = pAsynListenerExecutor;
+		closeObserver = pCloseObserver;
 		watchService = pWorkspace.getFileSystem().newWatchService();
-		watcherThread = new Thread(this, getClass().getSimpleName() + ": " + workspace.toAbsolutePath());
-		watcherThread.start();
-		shutdownHook = taskFactory.newShutdownHook(this);
-		runtime.addShutdownHook(shutdownHook);
+	}
+
+	/**
+	 * @param pWatcherThread
+	 */
+	void setWatcherThread(final Thread pWatcherThread) {
+		synchronized (watchedFiles) {
+			watcherThread = pWatcherThread;
+		}
+	}
+
+	/**
+	 * @param pShutdownHook
+	 */
+	void setShutdownHook(final Thread pShutdownHook) {
+		synchronized (watchedFiles) {
+			shutdownHook = pShutdownHook;
+			runtime.addShutdownHook(pShutdownHook);
+		}
 	}
 
 	/**
@@ -92,9 +110,15 @@ final class DefaultWorkspace implements Workspace, Runnable, CloseObserver<Defau
 	 */
 	private Path determinePath(final URL pUrl, final String[] pPath) {
 		Path currentPath = workspace;
+
 		for (final String path : pPath) {
+			if (isBlank(path)) {
+				throw new IllegalArgumentException(
+						"Blank path token detected! Invalid path -> " + Arrays.toString(pPath));
+			}
 			currentPath = currentPath.resolve(path);
 		}
+
 		return currentPath;
 	}
 
@@ -114,7 +138,7 @@ final class DefaultWorkspace implements Workspace, Runnable, CloseObserver<Defau
 	 * 
 	 */
 	private void checkClosed() {
-		if (watcherThread.isInterrupted()) {
+		if (closed) {
 			throw new IllegalStateException("This watcher has been closed!");
 		}
 	}
@@ -138,20 +162,21 @@ final class DefaultWorkspace implements Workspace, Runnable, CloseObserver<Defau
 			if (file == null) {
 				final Path path = determinePath(pOriginContent, pPath);
 				createDirectories(path.getParent());
+				final Path absolutePath = path.toAbsolutePath();
 
 				try (final InputStream in = pOriginContent.openStream()) {
 					if (pReplaceExisting) {
-						copy(in, path, REPLACE_EXISTING);
+						copy(in, absolutePath, REPLACE_EXISTING);
 					} else {
-						copy(in, path);
+						copy(in, absolutePath);
 					}
 				}
 
 				workspace.register(watchService, ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE);
-				file = new DefaultResource(informObserverExector, taskFactory, pOriginContent, path, this);
+				file = new DefaultResource(asynListenerExecutor, taskFactory, pOriginContent, absolutePath, this);
 
 				watchedFiles.put(pOriginContent, file);
-				resources.put(path.toAbsolutePath(), file);
+				resources.put(absolutePath, file);
 			}
 			return file;
 		}
@@ -172,34 +197,53 @@ final class DefaultWorkspace implements Workspace, Runnable, CloseObserver<Defau
 	 */
 	@Override
 	public void close() {
-		try {
-			synchronized (watchedFiles) {
+		boolean executeClose = false;
+		synchronized (watchedFiles) {
+			if (!closed) {
+				executeClose = closed = true;
+
+				// Close all resources managed by this workspace object.
 				for (final DefaultResource rs : watchedFiles.values()) {
 					rs.close();
 				}
+
+				// Clear the map which holds the origin-url to resource
+				// mappings.
 				watchedFiles.clear();
 			}
-			watchService.close();
-		} catch (final IOException e) {
-			LOG.debug(e.getMessage(), e);
-		} finally {
+
+			// Set the interrupted flag on the watcher thread; this will cause
+			// an InterruptedException to be received by all waiting threads.
 			if (!watcherThread.isInterrupted()) {
+				// Set the interrupted flag on the watcher-thread
 				watcherThread.interrupt();
 			}
+
+			// Remove the shutdown hook
 			try {
-				closeObserver.closed(this);
+				runtime.removeShutdownHook(shutdownHook);
 			} catch (final Exception e) {
+				// Can happen if the vm is already shutting down i.e. close
+				// has been called from the shutdown hook.
 				LOG.debug(e.getMessage(), e);
-			} finally {
-				try {
-					runtime.removeShutdownHook(shutdownHook);
-				} catch (final Exception e) {
-					// Can happen if the vm is already shutting down i.e. close
-					// has been called from the shutdown hook.
-					LOG.debug(e.getMessage(), e);
-				}
-				resources.clear();
 			}
+		}
+
+		if (executeClose) {
+			// Clear the concurrent-map which holds the mappings between
+			// absolute paths to the resource objects.
+			resources.clear();
+
+			// Close the watchService retrieved from the workspace filesystem.
+			try {
+				watchService.close();
+			} catch (final IOException e) {
+				LOG.debug(e.getMessage(), e);
+			}
+
+			// Inform the close-observer about the fact that this workspace has
+			// been closed.
+			closeObserver.closed(this);
 		}
 	}
 
@@ -229,7 +273,7 @@ final class DefaultWorkspace implements Workspace, Runnable, CloseObserver<Defau
 	@Override
 	public void run() {
 		try {
-			while (!watcherThread.isInterrupted()) {
+			while (!closed) {
 				final WatchKey key = watchService.take();
 
 				for (final WatchEvent<?> event : key.pollEvents()) {

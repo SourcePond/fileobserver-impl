@@ -13,11 +13,12 @@ import org.junit.Before;
  */
 public class DefaultWatchManagerTest {
 	private final Runtime runtime = mock(Runtime.class);
+	private final ThreadFactory threadFactory = mock(ThreadFactory.class);
 	private final TaskFactory taskFactory = mock(TaskFactory.class);
 	private final FileSystem fs = mock(FileSystem.class);
 	private final Path workspace = mock(Path.class);
 	private final Path lockFile = mock(Path.class);
-	private final DefaultWorkspaceFactory manager = new DefaultWorkspaceFactory(runtime, taskFactory);
+	private final DefaultWorkspaceFactory manager = new DefaultWorkspaceFactory(runtime, threadFactory, taskFactory);
 
 	/**
 	 * 

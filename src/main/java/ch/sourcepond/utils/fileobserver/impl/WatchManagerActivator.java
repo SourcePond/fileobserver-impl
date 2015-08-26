@@ -13,6 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.utils.fileobserver.impl;
 
+import static org.slf4j.LoggerFactory.getLogger;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.HashSet;
@@ -21,6 +23,8 @@ import java.util.concurrent.ExecutorService;
 
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceRegistration;
+import org.slf4j.Logger;
 
 import ch.sourcepond.utils.fileobserver.Workspace;
 import ch.sourcepond.utils.fileobserver.WorkspaceFactory;
@@ -30,8 +34,10 @@ import ch.sourcepond.utils.fileobserver.WorkspaceLockedException;
  *
  */
 public final class WatchManagerActivator implements BundleActivator, WorkspaceFactory, CloseObserver<DefaultWorkspace> {
+	private static final Logger LOG = getLogger(WatchManagerActivator.class);
 	private final Set<DefaultWorkspace> workspaces = new HashSet<>();
 	private final DefaultWorkspaceFactory factory = new DefaultWorkspaceFactory();
+	private ServiceRegistration<WorkspaceFactory> registration;
 
 	/*
 	 * (non-Javadoc)
@@ -41,7 +47,10 @@ public final class WatchManagerActivator implements BundleActivator, WorkspaceFa
 	 */
 	@Override
 	public void start(final BundleContext context) throws Exception {
-		context.registerService(WorkspaceFactory.class, this, null);
+		registration = context.registerService(WorkspaceFactory.class, this, null);
+		if (LOG.isInfoEnabled()) {
+			LOG.info("Registered " + WorkspaceFactory.class.getName() + " service");
+		}
 	}
 
 	/*
@@ -56,6 +65,12 @@ public final class WatchManagerActivator implements BundleActivator, WorkspaceFa
 			for (final DefaultWorkspace ws : workspaces) {
 				ws.close();
 			}
+		}
+		if (registration != null) {
+			registration.unregister();
+		}
+		if (LOG.isInfoEnabled()) {
+			LOG.info("Unregistered " + WorkspaceFactory.class.getName() + " service");
 		}
 	}
 
