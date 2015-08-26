@@ -17,7 +17,6 @@ import static org.slf4j.LoggerFactory.getLogger;
 
 import org.slf4j.Logger;
 
-import ch.sourcepond.utils.fileobserver.Resource;
 import ch.sourcepond.utils.fileobserver.ResourceChangeListener;
 import ch.sourcepond.utils.fileobserver.ResourceEvent;
 
@@ -29,15 +28,13 @@ final class InformObserverTask implements Runnable {
 	private static final Logger LOG = getLogger(InformObserverTask.class);
 	private final ResourceChangeListener listener;
 	private final ResourceEvent event;
-	private final Resource resource;
 
 	/**
 	 * @param pListener
 	 */
-	InformObserverTask(final ResourceChangeListener pListener, final ResourceEvent pEvent, final Resource pResource) {
+	InformObserverTask(final ResourceChangeListener pListener, final ResourceEvent pEvent) {
 		listener = pListener;
 		event = pEvent;
-		resource = pResource;
 	}
 
 	/*

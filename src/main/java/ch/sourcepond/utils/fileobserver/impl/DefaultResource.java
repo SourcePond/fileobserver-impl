@@ -13,6 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.utils.fileobserver.impl;
 
+import static ch.sourcepond.utils.fileobserver.ResourceEvent.Type.LISTENER_ADDED;
+import static ch.sourcepond.utils.fileobserver.ResourceEvent.Type.LISTENER_REMOVED;
 import static java.nio.file.Files.newInputStream;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -49,9 +51,9 @@ final class DefaultResource implements Resource, Closeable {
 	/**
 	 * @param pOrigin
 	 */
-	DefaultResource(final ExecutorService pExecutor, final TaskFactory pTaskFactory, final URL pOriginalContent,
-			final Path pStoragePath, final CloseObserver<DefaultResource> pCallback) {
-		executor = pExecutor;
+	DefaultResource(final ExecutorService pAsynListenerExecutor, final TaskFactory pTaskFactory,
+			final URL pOriginalContent, final Path pStoragePath, final CloseObserver<DefaultResource> pCallback) {
+		executor = pAsynListenerExecutor;
 		taskFactory = pTaskFactory;
 		originContent = pOriginalContent;
 		storagePath = pStoragePath;
@@ -78,13 +80,17 @@ final class DefaultResource implements Resource, Closeable {
 	 * sourcepond.utils.content.observer.ChangeObserver)
 	 */
 	@Override
-	public synchronized void addListener(final ResourceChangeListener pObserver) {
+	public void addListener(final ResourceChangeListener pObserver) {
 		checkClosed();
-		if (!listeners.add(pObserver)) {
-			LOG.debug("Observer {0} already present, nothing to be added.", pObserver);
-		} else {
-			fireEvent(pObserver, new ResourceEvent(this, Type.LISTENER_ADDED));
+		synchronized (listeners) {
+			if (!listeners.add(pObserver)) {
+				if (LOG.isDebugEnabled()) {
+					LOG.debug("Observer {0} already present, nothing to be added.", pObserver);
+					return;
+				}
+			}
 		}
+		fireEvent(pObserver, new ResourceEvent(this, LISTENER_ADDED));
 	}
 
 	/*
@@ -94,14 +100,20 @@ final class DefaultResource implements Resource, Closeable {
 	 * sourcepond.utils.content.observer.ChangeObserver)
 	 */
 	@Override
-	public synchronized void removeListener(final ResourceChangeListener pObserver) {
+	public void removeListener(final ResourceChangeListener pListener) {
 		if (isClosed()) {
 			LOG.warn("Workspace is closed; do nothing");
-		} else if (!listeners.remove(pObserver)) {
-			LOG.debug("Observer {0} not present, nothing to be removed.", pObserver);
-		} else {
-			fireEvent(pObserver, new ResourceEvent(this, Type.LISTENER_REMOVED));
+			return;
 		}
+		synchronized (listeners) {
+			if (!listeners.remove(pListener)) {
+				if (LOG.isDebugEnabled()) {
+					LOG.debug("Observer {0} not present, nothing to be removed.", pListener);
+				}
+				return;
+			}
+		}
+		fireEvent(pListener, new ResourceEvent(this, LISTENER_REMOVED));
 	}
 
 	/*
@@ -116,10 +128,10 @@ final class DefaultResource implements Resource, Closeable {
 	}
 
 	/**
-	 * @param pObserver
+	 * @param pListener
 	 */
-	private void fireEvent(final ResourceChangeListener pObserver, final ResourceEvent pEvent) {
-		executor.execute(taskFactory.newObserverTask(pObserver, pEvent, this));
+	private void fireEvent(final ResourceChangeListener pListener, final ResourceEvent pEvent) {
+		executor.execute(taskFactory.newObserverTask(pListener, pEvent));
 	}
 
 	/**
@@ -127,8 +139,10 @@ final class DefaultResource implements Resource, Closeable {
 	 */
 	void informListeners(final ResourceEvent.Type pType) {
 		final ResourceEvent event = new ResourceEvent(this, pType);
-		for (final ResourceChangeListener listener : listeners) {
-			fireEvent(listener, event);
+		synchronized (listeners) {
+			for (final ResourceChangeListener listener : listeners) {
+				fireEvent(listener, event);
+			}
 		}
 	}
 
@@ -150,7 +164,12 @@ final class DefaultResource implements Resource, Closeable {
 	@Override
 	public void close() throws IOException {
 		closed = true;
-		listeners.clear();
+		synchronized (listeners) {
+			for (final ResourceChangeListener listener : listeners) {
+				fireEvent(listener, new ResourceEvent(this, Type.LISTENER_REMOVED));
+			}
+			listeners.clear();
+		}
 		callback.closed(this);
 	}
 
@@ -159,5 +178,15 @@ final class DefaultResource implements Resource, Closeable {
 	 */
 	Path getStoragePath() {
 		return storagePath;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return getStoragePath().toString();
 	}
 }
