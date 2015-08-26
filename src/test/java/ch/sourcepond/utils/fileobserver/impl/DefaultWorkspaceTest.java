@@ -28,6 +28,7 @@ import org.junit.Test;
 import org.mockito.InOrder;
 
 import ch.sourcepond.utils.fileobserver.Resource;
+import ch.sourcepond.utils.fileobserver.commons.CloseState;
 
 /**
  * @author rolandhauser

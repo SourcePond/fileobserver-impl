@@ -23,10 +23,13 @@ import javax.inject.Inject;
 import org.junit.runner.RunWith;
 import org.ops4j.pax.exam.Configuration;
 import org.ops4j.pax.exam.Option;
+import org.ops4j.pax.exam.ProbeBuilder;
+import org.ops4j.pax.exam.TestProbeBuilder;
 import org.ops4j.pax.exam.junit.PaxExam;
 import org.ops4j.pax.exam.spi.reactors.ExamReactorStrategy;
 import org.ops4j.pax.exam.spi.reactors.PerMethod;
 
+import ch.sourcepond.utils.fileobserver.Constants;
 import ch.sourcepond.utils.fileobserver.WorkspaceFactory;
 import ch.sourcepond.utils.fileobserver.integrationtest.WatchManagerITCase;
 
@@ -41,9 +44,16 @@ public class OSGiWatchManagerITCase extends WatchManagerITCase {
 	@Inject
 	private WorkspaceFactory manager;
 
+	@ProbeBuilder
+	public TestProbeBuilder probeConfiguration(final TestProbeBuilder probe) {
+		probe.addTest(Constants.class);
+		return probe;
+	}
+
 	@Configuration
 	public Option[] config() throws Exception {
 		return options(mavenBundle("ch.sourcepond.utils", "fileobserver-api").versionAsInProject(),
+				mavenBundle("ch.sourcepond.utils", "fileobserver-commons").versionAsInProject(),
 				mavenBundle("org.apache.commons", "commons-lang3").versionAsInProject(), defaultOptions());
 	}
 

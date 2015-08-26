@@ -19,6 +19,7 @@ import org.mockito.InOrder;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
 
+import ch.sourcepond.utils.fileobserver.Workspace;
 import ch.sourcepond.utils.fileobserver.WorkspaceFactory;
 
 /**
@@ -30,7 +31,7 @@ public class WorkspaceFactoryTest {
 	private final DefaultWorkspaceFactory factory = mock(DefaultWorkspaceFactory.class);
 	private final DefaultWorkspace workspace = mock(DefaultWorkspace.class);
 	private final ServiceRegistration<WorkspaceFactory> registration = mock(ServiceRegistration.class);
-	private final Set<DefaultWorkspace> openWorkspaces = new HashSet<>();
+	private final Set<Workspace> openWorkspaces = new HashSet<>();
 	private final WorkspaceFactoryActivator activator = new WorkspaceFactoryActivator(factory, openWorkspaces);
 
 	/**

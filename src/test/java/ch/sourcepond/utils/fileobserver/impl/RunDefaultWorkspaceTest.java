@@ -25,6 +25,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import ch.sourcepond.utils.fileobserver.ResourceEvent.Type;
+import ch.sourcepond.utils.fileobserver.commons.CloseState;
 
 /**
  *

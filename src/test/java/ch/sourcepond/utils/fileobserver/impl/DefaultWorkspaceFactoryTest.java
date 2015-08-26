@@ -17,6 +17,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import ch.sourcepond.utils.fileobserver.commons.CloseObserver;
+import ch.sourcepond.utils.fileobserver.commons.TaskFactory;
+
 /**
  * @author rolandhauser
  *

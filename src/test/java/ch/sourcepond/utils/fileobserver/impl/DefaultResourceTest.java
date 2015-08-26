@@ -30,6 +30,8 @@ import org.mockito.Mockito;
 import ch.sourcepond.utils.fileobserver.ResourceChangeListener;
 import ch.sourcepond.utils.fileobserver.ResourceEvent;
 import ch.sourcepond.utils.fileobserver.ResourceEvent.Type;
+import ch.sourcepond.utils.fileobserver.commons.CloseState;
+import ch.sourcepond.utils.fileobserver.commons.TaskFactory;
 
 /**
  * @author rolandhauser

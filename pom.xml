@@ -16,15 +16,15 @@
 	</description>
 
 	<properties>
-		<fileobserver-api.version>1.0.0-SNAPSHOT</fileobserver-api.version>
+		<fileobserver-commons.version>1.0.0-SNAPSHOT</fileobserver-commons.version>
 	</properties>
 
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
 				<groupId>ch.sourcepond.utils</groupId>
-				<artifactId>fileobserver-api</artifactId>
-				<version>${fileobserver-api.version}</version>
+				<artifactId>fileobserver-commons</artifactId>
+				<version>${fileobserver-commons.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
@@ -36,7 +36,7 @@
 		</dependency>
 		<dependency>
 			<groupId>ch.sourcepond.utils</groupId>
-			<artifactId>fileobserver-api</artifactId>
+			<artifactId>fileobserver-commons</artifactId>
 		</dependency>
 
 		<!-- OSGi integration testing -->

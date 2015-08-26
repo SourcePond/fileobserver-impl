@@ -24,8 +24,6 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 import static java.nio.file.StandardWatchEventKinds.OVERFLOW;
 import static org.apache.commons.lang3.StringUtils.isBlank;
-import static org.apache.commons.lang3.Validate.notEmpty;
-import static org.apache.commons.lang3.Validate.notNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import java.io.IOException;
@@ -44,26 +42,24 @@ import java.util.concurrent.ExecutorService;
 
 import org.slf4j.Logger;
 
-import ch.sourcepond.utils.fileobserver.Resource;
 import ch.sourcepond.utils.fileobserver.ResourceEvent;
 import ch.sourcepond.utils.fileobserver.ResourceEvent.Type;
-import ch.sourcepond.utils.fileobserver.Workspace;
+import ch.sourcepond.utils.fileobserver.commons.BaseWorkspace;
+import ch.sourcepond.utils.fileobserver.commons.CloseObserver;
+import ch.sourcepond.utils.fileobserver.commons.CloseState;
+import ch.sourcepond.utils.fileobserver.commons.TaskFactory;
 
 /**
  * @author rolandhauser
  *
  */
-class DefaultWorkspace implements Workspace, Runnable {
+class DefaultWorkspace extends BaseWorkspace<DefaultResource>implements Runnable {
 	private static final Logger LOG = getLogger(DefaultWorkspace.class);
-	private final Map<URL, DefaultResource> managedResourcesCache;
 	private final ConcurrentMap<Path, DefaultResource> watcherThreadCache;
 	private final Runtime runtime;
 	private final Path workspace;
-	private final TaskFactory taskFactory;
-	private final ExecutorService asynListenerExecutor;
 	private final WatchService watchService;
 	private final CloseObserver<DefaultWorkspace> closeObserver;
-	private final CloseState state;
 	private Thread watcherThread;
 	private Thread shutdownHook;
 
@@ -77,6 +73,7 @@ class DefaultWorkspace implements Workspace, Runnable {
 			final CloseObserver<DefaultWorkspace> pCloseObserver,
 			final Map<URL, DefaultResource> pManagedResourcesCache,
 			final ConcurrentMap<Path, DefaultResource> pWatcherThreadCache) throws IOException {
+		super(pManagedResourcesCache, pAsynListenerExecutor, pTaskFactory, pState);
 		assert pRuntime != null;
 		assert pState != null;
 		assert pWorkspace != null;
@@ -87,12 +84,8 @@ class DefaultWorkspace implements Workspace, Runnable {
 		assert pWatcherThreadCache != null;
 
 		runtime = pRuntime;
-		state = pState;
 		workspace = pWorkspace;
-		taskFactory = pTaskFactory;
-		asynListenerExecutor = pAsynListenerExecutor;
 		closeObserver = pCloseObserver;
-		managedResourcesCache = pManagedResourcesCache;
 		watcherThreadCache = pWatcherThreadCache;
 		watchService = pWorkspace.getFileSystem().newWatchService();
 	}
@@ -101,7 +94,7 @@ class DefaultWorkspace implements Workspace, Runnable {
 	 * @param pWatcherThread
 	 */
 	void setWatcherThread(final Thread pWatcherThread) {
-		synchronized (managedResourcesCache) {
+		synchronized (getManagedResourcesCache()) {
 			watcherThread = pWatcherThread;
 		}
 	}
@@ -110,7 +103,7 @@ class DefaultWorkspace implements Workspace, Runnable {
 	 * @param pShutdownHook
 	 */
 	void setShutdownHook(final Thread pShutdownHook) {
-		synchronized (managedResourcesCache) {
+		synchronized (getManagedResourcesCache()) {
 			shutdownHook = pShutdownHook;
 			runtime.addShutdownHook(pShutdownHook);
 		}
@@ -135,56 +128,27 @@ class DefaultWorkspace implements Workspace, Runnable {
 		return currentPath;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * ch.sourcepond.utils.fileobserver.impl.WatchManager#watchFile(java.net
-	 * .URL, java.lang.String[])
-	 */
 	@Override
-	public Resource watchFile(final URL pOriginContent, final String... pPath) throws IOException {
-		return watchFile(pOriginContent, true, pPath);
-	}
+	protected DefaultResource registerNewResource(final URL pOriginContent, final boolean pReplaceExisting,
+			final String[] pPath) throws IOException {
+		final Path path = determinePath(pOriginContent, pPath);
+		createDirectories(path.getParent());
+		final Path absolutePath = path.toAbsolutePath();
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see ch.sourcepond.utils.fileobserver.Workspace#watchFile(java.net.URL,
-	 * boolean, java.lang.String[])
-	 */
-	@Override
-	public Resource watchFile(final URL pOriginContent, final boolean pReplaceExisting, final String... pPath)
-			throws IOException {
-		notNull(pOriginContent, "URL cannot be null!");
-		notEmpty(pPath, "At least one path element must be specified!");
-
-		synchronized (managedResourcesCache) {
-			state.checkClosed();
-			DefaultResource file = managedResourcesCache.get(pOriginContent);
-
-			if (file == null) {
-				final Path path = determinePath(pOriginContent, pPath);
-				createDirectories(path.getParent());
-				final Path absolutePath = path.toAbsolutePath();
-
-				try (final InputStream in = pOriginContent.openStream()) {
-					if (pReplaceExisting) {
-						copy(in, absolutePath, REPLACE_EXISTING);
-					} else {
-						copy(in, absolutePath);
-					}
-				}
-
-				workspace.register(watchService, ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE);
-				file = new DefaultResource(asynListenerExecutor, taskFactory, pOriginContent, absolutePath,
-						new CloseState());
-
-				managedResourcesCache.put(pOriginContent, file);
-				watcherThreadCache.put(absolutePath, file);
+		try (final InputStream in = pOriginContent.openStream()) {
+			if (pReplaceExisting) {
+				copy(in, absolutePath, REPLACE_EXISTING);
+			} else {
+				copy(in, absolutePath);
 			}
-			return file;
 		}
+
+		workspace.register(watchService, ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE);
+		final DefaultResource file = new DefaultResource(getAsynListenerExecutor(), getTaskFactory(), pOriginContent,
+				absolutePath, new CloseState());
+
+		watcherThreadCache.put(absolutePath, file);
+		return file;
 	}
 
 	/**
@@ -192,20 +156,20 @@ class DefaultWorkspace implements Workspace, Runnable {
 	 */
 	private boolean syncClose() {
 		boolean executeClose = false;
-		synchronized (managedResourcesCache) {
-			if (!state.isClosed()) {
-				state.close();
+		synchronized (getManagedResourcesCache()) {
+			if (!getState().isClosed()) {
+				getState().close();
 				executeClose = true;
 
 				// Close all watcherThreadCache managed by this workspace
 				// object.
-				for (final DefaultResource rs : managedResourcesCache.values()) {
+				for (final DefaultResource rs : getManagedResourcesCache().values()) {
 					rs.close();
 				}
 
 				// Clear the map which holds the origin-url to resource
 				// mappings.
-				managedResourcesCache.clear();
+				getManagedResourcesCache().clear();
 
 				// Set the interrupted flag on the watcher thread; this will
 				// cause
@@ -284,7 +248,7 @@ class DefaultWorkspace implements Workspace, Runnable {
 	@Override
 	public void run() {
 		try {
-			while (!state.isClosed()) {
+			while (!getState().isClosed()) {
 				final WatchKey key = watchService.take();
 
 				for (final WatchEvent<?> event : key.pollEvents()) {
@@ -309,8 +273,8 @@ class DefaultWorkspace implements Workspace, Runnable {
 				}
 			}
 		} catch (final ClosedWatchServiceException | InterruptedException e) {
-			if (LOG.isWarnEnabled()) {
-				LOG.warn(e.getMessage(), e);
+			if (LOG.isDebugEnabled()) {
+				LOG.debug(e.getMessage(), e);
 			}
 			close();
 		}

@@ -17,6 +17,10 @@ import java.util.concurrent.ExecutorService;
 
 import org.junit.Before;
 
+import ch.sourcepond.utils.fileobserver.commons.CloseObserver;
+import ch.sourcepond.utils.fileobserver.commons.CloseState;
+import ch.sourcepond.utils.fileobserver.commons.TaskFactory;
+
 /**
  *
  */

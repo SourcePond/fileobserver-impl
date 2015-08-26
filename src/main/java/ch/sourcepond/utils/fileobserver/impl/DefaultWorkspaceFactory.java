@@ -24,14 +24,17 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 
-import ch.sourcepond.utils.fileobserver.WorkspaceFactory;
+import ch.sourcepond.utils.fileobserver.commons.BaseWorkspaceFactory;
+import ch.sourcepond.utils.fileobserver.commons.CloseObserver;
+import ch.sourcepond.utils.fileobserver.commons.CloseState;
+import ch.sourcepond.utils.fileobserver.commons.TaskFactory;
 
 /**
  *
  */
 @Named // Necessary to let Eclipse Sisu discover this class
 @Singleton
-public class DefaultWorkspaceFactory implements WorkspaceFactory, CloseObserver<DefaultWorkspace> {
+public class DefaultWorkspaceFactory extends BaseWorkspaceFactory<DefaultResource, DefaultWorkspace> {
 	private final Runtime runtime;
 	private final ThreadFactory threadFactory;
 	private final TaskFactory taskFactory;
@@ -73,7 +76,8 @@ public class DefaultWorkspaceFactory implements WorkspaceFactory, CloseObserver<
 	 * @throws WorkspaceLockedException
 	 * @throws IOException
 	 */
-	DefaultWorkspace create(final Path pWorkspace, final ExecutorService pAsynListenerExecutor,
+	@Override
+	protected DefaultWorkspace create(final Path pWorkspace, final ExecutorService pAsynListenerExecutor,
 			final CloseObserver<DefaultWorkspace> pCloseObserver) throws IOException {
 		// Create workspace instance
 		final DefaultWorkspace workspace = new DefaultWorkspace(runtime, new CloseState(), pWorkspace, taskFactory,
