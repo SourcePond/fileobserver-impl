@@ -1,4 +1,4 @@
-package ch.sourcepond.utils.fileobserver.integrationtest.cdi;
+package ch.sourcepond.utils.fileobserver.integrationtest.jsr330;
 
 import static com.google.inject.Guice.createInjector;
 import static org.junit.Assert.assertSame;
@@ -11,8 +11,8 @@ import com.google.inject.Binder;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 
-import ch.sourcepond.utils.fileobserver.WatchManager;
-import ch.sourcepond.utils.fileobserver.impl.DefaultWatchManager;
+import ch.sourcepond.utils.fileobserver.WorkspaceFactory;
+import ch.sourcepond.utils.fileobserver.impl.DefaultWorkspaceFactory;
 import ch.sourcepond.utils.fileobserver.integrationtest.WatchManagerITCase;
 
 /**
@@ -28,17 +28,17 @@ public class CdiWatchManagerITCase extends WatchManagerITCase {
 	 * verifyAndGetManager()
 	 */
 	@Override
-	protected WatchManager verifyAndGetManager() {
+	protected WorkspaceFactory verifyAndGetManager() {
 		final Injector injector = createInjector(new Module() {
 
 			@Override
 			public void configure(final Binder binder) {
-				binder.bind(WatchManager.class).to(DefaultWatchManager.class);
+				binder.bind(WorkspaceFactory.class).to(DefaultWorkspaceFactory.class);
 			}
 		});
-		final WatchManager watchManager = injector.getInstance(WatchManager.class);
+		final WorkspaceFactory watchManager = injector.getInstance(WorkspaceFactory.class);
 		// Verify that the watch-manager is a singleton
-		assertSame(watchManager, injector.getInstance(WatchManager.class));
+		assertSame(watchManager, injector.getInstance(WorkspaceFactory.class));
 		return watchManager;
 	}
 

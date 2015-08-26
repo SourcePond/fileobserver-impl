@@ -14,7 +14,7 @@ import org.ops4j.pax.exam.junit.PaxExam;
 import org.ops4j.pax.exam.spi.reactors.ExamReactorStrategy;
 import org.ops4j.pax.exam.spi.reactors.PerMethod;
 
-import ch.sourcepond.utils.fileobserver.WatchManager;
+import ch.sourcepond.utils.fileobserver.WorkspaceFactory;
 import ch.sourcepond.utils.fileobserver.integrationtest.WatchManagerITCase;
 
 /**
@@ -26,7 +26,7 @@ import ch.sourcepond.utils.fileobserver.integrationtest.WatchManagerITCase;
 public class OSGiWatchManagerITCase extends WatchManagerITCase {
 
 	@Inject
-	private WatchManager manager;
+	private WorkspaceFactory manager;
 
 	@Configuration
 	public Option[] config() throws Exception {
@@ -41,7 +41,7 @@ public class OSGiWatchManagerITCase extends WatchManagerITCase {
 	 * getManager()
 	 */
 	@Override
-	protected WatchManager verifyAndGetManager() {
+	protected WorkspaceFactory verifyAndGetManager() {
 		assertNotNull(manager);
 		return manager;
 	}

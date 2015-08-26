@@ -5,7 +5,6 @@ import static ch.sourcepond.utils.fileobserver.ResourceEvent.Type.RESOURCE_DELET
 import static ch.sourcepond.utils.fileobserver.ResourceEvent.Type.RESOURCE_MODIFIED;
 import static java.nio.file.Files.copy;
 import static java.nio.file.Files.createDirectories;
-import static java.nio.file.Files.deleteIfExists;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
@@ -34,39 +33,43 @@ import org.slf4j.Logger;
 import ch.sourcepond.utils.fileobserver.Resource;
 import ch.sourcepond.utils.fileobserver.ResourceEvent;
 import ch.sourcepond.utils.fileobserver.ResourceEvent.Type;
-import ch.sourcepond.utils.fileobserver.Watcher;
+import ch.sourcepond.utils.fileobserver.Workspace;
 
 /**
  * @author rolandhauser
  *
  */
-final class DefaultWatcher extends ClosableResource implements Watcher, Runnable {
-	private static final Logger LOG = getLogger(DefaultWatcher.class);
+final class DefaultWorkspace implements Workspace, Runnable, CloseCallback<DefaultResource> {
+	private static final Logger LOG = getLogger(DefaultWorkspace.class);
 	private final Map<URL, InternalResource> watchedFiles = new HashMap<>();
 	private final Map<Path, InternalResource> resources = new ConcurrentHashMap<>();
+	private final Runtime runtime;
 	private final Thread watcherThread;
-	private final Path lockFile;
+	private final Thread shutdownHook;
+	private final Path workspace;
 	private final TaskFactory taskFactory;
 	private final ExecutorService informObserverExector;
 	private final WatchService watchService;
+	private final CloseCallback<DefaultWorkspace> callback;
 
 	/**
-	 * @param pLockFile
+	 * @param pWorkspace
 	 * @param pWatchService
 	 * @throws IOException
 	 */
-	DefaultWatcher(final Path pLockFile, final TaskFactory pTaskFactory, final ExecutorService pInformObserverExector)
-			throws IOException {
-		lockFile = pLockFile;
+	DefaultWorkspace(final Runtime pRuntime, final Path pWorkspace, final TaskFactory pTaskFactory,
+			final ExecutorService pInformObserverExector, final CloseCallback<DefaultWorkspace> pCallback)
+					throws IOException {
+		runtime = pRuntime;
+		workspace = pWorkspace;
 		taskFactory = pTaskFactory;
 		informObserverExector = pInformObserverExector;
-		watchService = pLockFile.getFileSystem().newWatchService();
-		watcherThread = new Thread(this, getClass().getSimpleName() + ": " + lockFile.getParent().toAbsolutePath());
+		callback = pCallback;
+		watchService = pWorkspace.getFileSystem().newWatchService();
+		watcherThread = new Thread(this, getClass().getSimpleName() + ": " + workspace.toAbsolutePath());
 		watcherThread.start();
-	}
-
-	private Path getWorkspace() {
-		return lockFile.getParent();
+		shutdownHook = taskFactory.newShutdownHook(this);
+		runtime.addShutdownHook(shutdownHook);
 	}
 
 	/**
@@ -75,7 +78,7 @@ final class DefaultWatcher extends ClosableResource implements Watcher, Runnable
 	 * @return
 	 */
 	private Path determinePath(final URL pUrl, final String[] pPath) {
-		Path currentPath = getWorkspace();
+		Path currentPath = workspace;
 		for (final String path : pPath) {
 			currentPath = currentPath.resolve(path);
 		}
@@ -94,21 +97,29 @@ final class DefaultWatcher extends ClosableResource implements Watcher, Runnable
 		return watchFile(pOriginContent, true, pPath);
 	}
 
+	/**
+	 * 
+	 */
+	private void checkClosed() {
+		if (watcherThread.isInterrupted()) {
+			throw new IllegalStateException("This watcher has been closed!");
+		}
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see ch.sourcepond.utils.fileobserver.Watcher#watchFile(java.net.URL,
+	 * @see ch.sourcepond.utils.fileobserver.Workspace#watchFile(java.net.URL,
 	 * boolean, java.lang.String[])
 	 */
 	@Override
 	public Resource watchFile(final URL pOriginContent, final boolean pReplaceExisting, final String... pPath)
 			throws IOException {
-		checkClosed();
-
 		notNull(pOriginContent, "URL cannot be null!");
 		notEmpty(pPath, "At least one path element must be specified!");
 
 		synchronized (watchedFiles) {
+			checkClosed();
 			InternalResource file = watchedFiles.get(pOriginContent);
 
 			if (file == null) {
@@ -123,8 +134,8 @@ final class DefaultWatcher extends ClosableResource implements Watcher, Runnable
 					}
 				}
 
-				getWorkspace().register(watchService, ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE);
-				file = new DefaultResource(informObserverExector, taskFactory, pOriginContent, path);
+				workspace.register(watchService, ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE);
+				file = new DefaultResource(informObserverExector, taskFactory, pOriginContent, path, this);
 
 				watchedFiles.put(pOriginContent, file);
 				resources.put(path.toAbsolutePath(), file);
@@ -134,13 +145,52 @@ final class DefaultWatcher extends ClosableResource implements Watcher, Runnable
 	}
 
 	@Override
-	protected void doClose() throws IOException {
+	public void closed(final DefaultResource pSource) {
+		synchronized (watchedFiles) {
+			watchedFiles.remove(pSource.getOriginContent());
+		}
+		resources.remove(pSource.getStoragePath());
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.io.Closeable#close()
+	 */
+	@Override
+	public void close() {
 		try {
+			synchronized (watchedFiles) {
+				for (final InternalResource rs : watchedFiles.values()) {
+					try {
+						rs.close();
+					} catch (final IOException e) {
+						LOG.debug(e.getMessage(), e);
+					}
+				}
+				watchedFiles.clear();
+			}
 			watchService.close();
 		} catch (final IOException e) {
 			LOG.debug(e.getMessage(), e);
 		} finally {
-			deleteIfExists(lockFile);
+			if (!watcherThread.isInterrupted()) {
+				watcherThread.interrupt();
+			}
+			try {
+				callback.closed(this);
+			} catch (final Exception e) {
+				LOG.debug(e.getMessage(), e);
+			} finally {
+				try {
+					runtime.removeShutdownHook(shutdownHook);
+				} catch (final Exception e) {
+					// Can happen if the vm is already shutting down i.e. close
+					// has been called from the shutdown hook.
+					LOG.debug(e.getMessage(), e);
+				}
+				resources.clear();
+			}
 		}
 	}
 
@@ -170,7 +220,7 @@ final class DefaultWatcher extends ClosableResource implements Watcher, Runnable
 	@Override
 	public void run() {
 		try {
-			while (!isClosed()) {
+			while (!watcherThread.isInterrupted()) {
 				final WatchKey key = watchService.take();
 
 				for (final WatchEvent<?> event : key.pollEvents()) {
@@ -183,7 +233,7 @@ final class DefaultWatcher extends ClosableResource implements Watcher, Runnable
 
 					final Type typeOrNull = getTypeOrNull(kind);
 					if (typeOrNull != null) {
-						informObservers(getWorkspace().resolve((Path) event.context()), typeOrNull);
+						informObservers(workspace.resolve((Path) event.context()), typeOrNull);
 					}
 
 					if (key.reset()) {
@@ -196,11 +246,7 @@ final class DefaultWatcher extends ClosableResource implements Watcher, Runnable
 		} catch (final ClosedWatchServiceException e) {
 			LOG.debug(e.getMessage(), e);
 		} finally {
-			try {
-				close();
-			} catch (final IOException e) {
-				LOG.warn(e.getMessage(), e);
-			}
+			close();
 		}
 	}
 
@@ -212,9 +258,6 @@ final class DefaultWatcher extends ClosableResource implements Watcher, Runnable
 		final InternalResource resource = resources.get(pAbsolutePath.toAbsolutePath());
 		if (resource != null) {
 			resource.informListeners(pEventType);
-		}
-		if (LOG.isDebugEnabled()) {
-
 		}
 	}
 }

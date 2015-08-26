@@ -28,8 +28,8 @@ import org.junit.Test;
 
 import ch.sourcepond.utils.fileobserver.Resource;
 import ch.sourcepond.utils.fileobserver.ResourceEvent.Type;
-import ch.sourcepond.utils.fileobserver.WatchManager;
-import ch.sourcepond.utils.fileobserver.Watcher;
+import ch.sourcepond.utils.fileobserver.WorkspaceFactory;
+import ch.sourcepond.utils.fileobserver.Workspace;
 
 /**
  * @author rolandhauser
@@ -56,7 +56,7 @@ public abstract class WatchManagerITCase {
 	private final ExecutorService observerInforExecutor = Executors.newCachedThreadPool();
 	private final TestListener listener = new TestListener();
 	private URL originContent;
-	private Watcher watcher;
+	private Workspace watcher;
 	private Resource resource;
 
 	/**
@@ -66,7 +66,7 @@ public abstract class WatchManagerITCase {
 	@Before
 	public void setup() throws Exception {
 		originContent = getClass().getResource("/" + TEST_FILE_NAME);
-		watcher = verifyAndGetManager().watch(WORKSPACE, observerInforExecutor);
+		watcher = verifyAndGetManager().create(WORKSPACE, observerInforExecutor);
 		resource = watcher.watchFile(originContent, TEST_FILE_NAME);
 
 		// Fixes test-run on MacOSX because WatchService is not ready when the
@@ -76,11 +76,11 @@ public abstract class WatchManagerITCase {
 		resource.addListener(listener);
 	}
 
-	protected Watcher getWatcher() {
+	protected Workspace getWatcher() {
 		return watcher;
 	}
 
-	protected abstract WatchManager verifyAndGetManager();
+	protected abstract WorkspaceFactory verifyAndGetManager();
 
 	/**
 	 * @param pLine

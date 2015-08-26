@@ -21,23 +21,39 @@ import ch.sourcepond.utils.fileobserver.ResourceEvent.Type;
  * @author rolandhauser
  *
  */
-final class DefaultResource extends ClosableResource implements InternalResource {
+final class DefaultResource implements InternalResource {
 	private static final Logger LOG = getLogger(DefaultResource.class);
 	private final Set<ResourceChangeListener> listeners = new HashSet<>();
 	private final ExecutorService executor;
 	private final TaskFactory taskFactory;
 	private final URL originContent;
 	private final Path storagePath;
+	private final CloseCallback<DefaultResource> callback;
+	private volatile boolean closed;
 
 	/**
 	 * @param pOrigin
 	 */
 	DefaultResource(final ExecutorService pExecutor, final TaskFactory pTaskFactory, final URL pOriginalContent,
-			final Path pStoragePath) {
+			final Path pStoragePath, final CloseCallback<DefaultResource> pCallback) {
 		executor = pExecutor;
 		taskFactory = pTaskFactory;
 		originContent = pOriginalContent;
 		storagePath = pStoragePath;
+		callback = pCallback;
+	}
+
+	/**
+	 * 
+	 */
+	private void checkClosed() {
+		if (closed) {
+			throw new IllegalStateException("This watcher has been closed!");
+		}
+	}
+
+	private boolean isClosed() {
+		return closed;
 	}
 
 	/*
@@ -65,7 +81,7 @@ final class DefaultResource extends ClosableResource implements InternalResource
 	@Override
 	public synchronized void removeListener(final ResourceChangeListener pObserver) {
 		if (isClosed()) {
-			LOG.warn("Watcher is closed; do nothing");
+			LOG.warn("Workspace is closed; do nothing");
 		} else if (!listeners.remove(pObserver)) {
 			LOG.debug("Observer {0} not present, nothing to be removed.", pObserver);
 		} else {
@@ -121,7 +137,16 @@ final class DefaultResource extends ClosableResource implements InternalResource
 	 * @see ch.sourcepond.utils.fileobserver.impl.ClosableResource#doClose()
 	 */
 	@Override
-	protected void doClose() throws IOException {
+	public void close() throws IOException {
+		closed = true;
 		listeners.clear();
+		callback.closed(this);
+	}
+
+	/**
+	 * @return
+	 */
+	Path getStoragePath() {
+		return storagePath;
 	}
 }

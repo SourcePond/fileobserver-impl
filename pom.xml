@@ -61,6 +61,9 @@
 				<artifactId>maven-bundle-plugin</artifactId>
 				<configuration>
 					<instructions>
+						<!-- Ignore JSR330 annotations; in OSGi we use a BundleActivator to 
+							export the WorkspaceManager singleton as service. -->
+						<Import-Package>!javax.inject.*,*</Import-Package>
 						<Bundle-Activator>ch.sourcepond.utils.fileobserver.impl.WatchManagerActivator</Bundle-Activator>
 					</instructions>
 				</configuration>
