@@ -32,7 +32,6 @@ import org.slf4j.Logger;
 import ch.sourcepond.utils.fileobserver.Resource;
 import ch.sourcepond.utils.fileobserver.ResourceChangeListener;
 import ch.sourcepond.utils.fileobserver.ResourceEvent;
-import ch.sourcepond.utils.fileobserver.ResourceEvent.Type;
 
 /**
  * @author rolandhauser
@@ -46,7 +45,7 @@ final class DefaultResource implements Resource, Closeable {
 	private final URL originContent;
 	private final Path storagePath;
 	private final CloseObserver<DefaultResource> callback;
-	private volatile boolean closed;
+	private boolean closed;
 
 	/**
 	 * @param pOrigin
@@ -69,10 +68,6 @@ final class DefaultResource implements Resource, Closeable {
 		}
 	}
 
-	private boolean isClosed() {
-		return closed;
-	}
-
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -80,17 +75,17 @@ final class DefaultResource implements Resource, Closeable {
 	 * sourcepond.utils.content.observer.ChangeObserver)
 	 */
 	@Override
-	public void addListener(final ResourceChangeListener pObserver) {
-		checkClosed();
+	public void addListener(final ResourceChangeListener pListener) {
 		synchronized (listeners) {
-			if (!listeners.add(pObserver)) {
+			checkClosed();
+			if (!listeners.add(pListener)) {
 				if (LOG.isDebugEnabled()) {
-					LOG.debug("Observer {0} already present, nothing to be added.", pObserver);
-					return;
+					LOG.debug("Observer {0} already present, nothing to be added.", pListener);
 				}
+				return;
 			}
 		}
-		fireEvent(pObserver, new ResourceEvent(this, LISTENER_ADDED));
+		fireEvent(pListener, new ResourceEvent(this, LISTENER_ADDED));
 	}
 
 	/*
@@ -101,11 +96,8 @@ final class DefaultResource implements Resource, Closeable {
 	 */
 	@Override
 	public void removeListener(final ResourceChangeListener pListener) {
-		if (isClosed()) {
-			LOG.warn("Workspace is closed; do nothing");
-			return;
-		}
 		synchronized (listeners) {
+			checkClosed();
 			if (!listeners.remove(pListener)) {
 				if (LOG.isDebugEnabled()) {
 					LOG.debug("Observer {0} not present, nothing to be removed.", pListener);
@@ -123,7 +115,9 @@ final class DefaultResource implements Resource, Closeable {
 	 */
 	@Override
 	public InputStream open() throws IOException {
-		checkClosed();
+		synchronized (listeners) {
+			checkClosed();
+		}
 		return newInputStream(storagePath);
 	}
 
@@ -138,10 +132,16 @@ final class DefaultResource implements Resource, Closeable {
 	 * @param pType
 	 */
 	void informListeners(final ResourceEvent.Type pType) {
-		final ResourceEvent event = new ResourceEvent(this, pType);
 		synchronized (listeners) {
-			for (final ResourceChangeListener listener : listeners) {
-				fireEvent(listener, event);
+			if (closed) {
+				if (LOG.isDebugEnabled()) {
+					LOG.debug("listeners will not be informed because this resource is closed");
+				}
+			} else {
+				final ResourceEvent event = new ResourceEvent(this, pType);
+				for (final ResourceChangeListener listener : listeners) {
+					fireEvent(listener, event);
+				}
 			}
 		}
 	}
@@ -162,15 +162,20 @@ final class DefaultResource implements Resource, Closeable {
 	 * @see ch.sourcepond.utils.fileobserver.impl.ClosableResource#doClose()
 	 */
 	@Override
-	public void close() throws IOException {
-		closed = true;
+	public void close() {
+		boolean executeObserver = false;
 		synchronized (listeners) {
-			for (final ResourceChangeListener listener : listeners) {
-				fireEvent(listener, new ResourceEvent(this, Type.LISTENER_REMOVED));
+			if (!closed) {
+				for (final ResourceChangeListener listener : listeners) {
+					fireEvent(listener, new ResourceEvent(this, LISTENER_REMOVED));
+				}
+				executeObserver = closed = true;
+				listeners.clear();
 			}
-			listeners.clear();
 		}
-		callback.closed(this);
+		if (executeObserver) {
+			callback.closed(this);
+		}
 	}
 
 	/**

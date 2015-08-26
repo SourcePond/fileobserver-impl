@@ -175,11 +175,7 @@ final class DefaultWorkspace implements Workspace, Runnable, CloseObserver<Defau
 		try {
 			synchronized (watchedFiles) {
 				for (final DefaultResource rs : watchedFiles.values()) {
-					try {
-						rs.close();
-					} catch (final IOException e) {
-						LOG.debug(e.getMessage(), e);
-					}
+					rs.close();
 				}
 				watchedFiles.clear();
 			}
