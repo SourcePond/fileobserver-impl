@@ -77,7 +77,7 @@ public class DefaultResourceTest {
 		when(fs.provider()).thenReturn(provider);
 		when(storagePath.getFileSystem()).thenReturn(fs);
 		originContent = new URL("file:///anyResource");
-		resource = new DefaultResource(executor, taskFactory, originContent, storagePath);
+		resource = new DefaultResource(executor, taskFactory, originContent, storagePath, new CloseState());
 	}
 
 	/**

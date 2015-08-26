@@ -177,7 +177,8 @@ class DefaultWorkspace implements Workspace, Runnable {
 				}
 
 				workspace.register(watchService, ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE);
-				file = new DefaultResource(asynListenerExecutor, taskFactory, pOriginContent, absolutePath);
+				file = new DefaultResource(asynListenerExecutor, taskFactory, pOriginContent, absolutePath,
+						new CloseState());
 
 				managedResourcesCache.put(pOriginContent, file);
 				watcherThreadCache.put(absolutePath, file);

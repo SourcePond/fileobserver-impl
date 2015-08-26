@@ -44,26 +44,18 @@ class DefaultResource implements Resource, Closeable {
 	private final TaskFactory taskFactory;
 	private final URL originContent;
 	private final Path storagePath;
-	private boolean closed;
+	private CloseState state;
 
 	/**
 	 * @param pOrigin
 	 */
 	DefaultResource(final ExecutorService pAsynListenerExecutor, final TaskFactory pTaskFactory,
-			final URL pOriginalContent, final Path pStoragePath) {
+			final URL pOriginalContent, final Path pStoragePath, final CloseState pState) {
 		asynListenerExecutor = pAsynListenerExecutor;
 		taskFactory = pTaskFactory;
 		originContent = pOriginalContent;
 		storagePath = pStoragePath;
-	}
-
-	/**
-	 * 
-	 */
-	private void checkClosed() {
-		if (closed) {
-			throw new IllegalStateException("This watcher has been closed!");
-		}
+		state = pState;
 	}
 
 	/*
@@ -75,7 +67,7 @@ class DefaultResource implements Resource, Closeable {
 	@Override
 	public void addListener(final ResourceChangeListener pListener) {
 		synchronized (listeners) {
-			checkClosed();
+			state.checkClosed();
 			if (!listeners.add(pListener)) {
 				if (LOG.isDebugEnabled()) {
 					LOG.debug("Observer {0} already present, nothing to be added.", pListener);
@@ -95,7 +87,7 @@ class DefaultResource implements Resource, Closeable {
 	@Override
 	public void removeListener(final ResourceChangeListener pListener) {
 		synchronized (listeners) {
-			checkClosed();
+			state.checkClosed();
 			if (!listeners.remove(pListener)) {
 				if (LOG.isDebugEnabled()) {
 					LOG.debug("Observer {0} not present, nothing to be removed.", pListener);
@@ -114,7 +106,7 @@ class DefaultResource implements Resource, Closeable {
 	@Override
 	public InputStream open() throws IOException {
 		synchronized (listeners) {
-			checkClosed();
+			state.checkClosed();
 		}
 		return newInputStream(storagePath);
 	}
@@ -131,7 +123,7 @@ class DefaultResource implements Resource, Closeable {
 	 */
 	void informListeners(final ResourceEvent.Type pType) {
 		synchronized (listeners) {
-			if (closed) {
+			if (state.isClosed()) {
 				if (LOG.isDebugEnabled()) {
 					LOG.debug("listeners will not be informed because this resource is closed");
 				}
@@ -162,11 +154,11 @@ class DefaultResource implements Resource, Closeable {
 	@Override
 	public void close() {
 		synchronized (listeners) {
-			if (!closed) {
+			if (!state.isClosed()) {
 				for (final ResourceChangeListener listener : listeners) {
 					fireEvent(listener, new ResourceEvent(this, LISTENER_REMOVED));
 				}
-				closed = true;
+				state.close();
 				listeners.clear();
 			}
 		}
