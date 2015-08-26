@@ -21,18 +21,17 @@ import ch.sourcepond.utils.fileobserver.ResourceChangeListener;
 import ch.sourcepond.utils.fileobserver.ResourceEvent;
 
 /**
- * @author rolandhauser
  *
  */
-final class InformObserverTask implements Runnable {
-	private static final Logger LOG = getLogger(InformObserverTask.class);
+final class InformListenerTask implements Runnable {
+	private static final Logger LOG = getLogger(InformListenerTask.class);
 	private final ResourceChangeListener listener;
 	private final ResourceEvent event;
 
 	/**
 	 * @param pListener
 	 */
-	InformObserverTask(final ResourceChangeListener pListener, final ResourceEvent pEvent) {
+	InformListenerTask(final ResourceChangeListener pListener, final ResourceEvent pEvent) {
 		listener = pListener;
 		event = pEvent;
 	}
@@ -47,7 +46,9 @@ final class InformObserverTask implements Runnable {
 		try {
 			listener.resourceChange(event);
 		} catch (final Exception e) {
-			LOG.warn("Caught unexpected exception", e);
+			if (LOG.isWarnEnabled()) {
+				LOG.warn("Caught unexpected exception", e);
+			}
 		}
 	}
 }

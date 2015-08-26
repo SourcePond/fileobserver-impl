@@ -14,13 +14,14 @@ limitations under the License.*/
 package ch.sourcepond.utils.fileobserver.integrationtest;
 
 import static ch.sourcepond.utils.fileobserver.Constants.TEST_FILE_NAME;
+import static ch.sourcepond.utils.fileobserver.Constants.WORKSPACE;
 import static ch.sourcepond.utils.fileobserver.ResourceEvent.Type.LISTENER_ADDED;
 import static ch.sourcepond.utils.fileobserver.ResourceEvent.Type.LISTENER_REMOVED;
 import static java.lang.Thread.sleep;
-import static java.nio.file.FileSystems.getDefault;
 import static java.nio.file.Files.delete;
 import static java.nio.file.StandardOpenOption.APPEND;
 import static java.nio.file.StandardOpenOption.CREATE;
+import static java.util.concurrent.Executors.newCachedThreadPool;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -32,11 +33,8 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
-import java.nio.file.Path;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
-import org.apache.commons.lang3.SystemUtils;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -65,8 +63,7 @@ public abstract class WatchManagerITCase {
 	private static final String KEY = "key";
 	private static final String ADDED_KEY = "addedKey";
 	private static final String ADDED_VALUE = "This content has been added after listener registration";
-	private static final Path WORKSPACE = getDefault().getPath(SystemUtils.USER_DIR, "target");
-	private final ExecutorService observerInforExecutor = Executors.newCachedThreadPool();
+	private final ExecutorService asynListenerExecutor = newCachedThreadPool();
 	private final TestListener listener = new TestListener();
 	private URL originContent;
 	private Workspace watcher;
@@ -79,7 +76,7 @@ public abstract class WatchManagerITCase {
 	@Before
 	public void setup() throws Exception {
 		originContent = getClass().getResource("/" + TEST_FILE_NAME);
-		watcher = verifyAndGetManager().create(WORKSPACE, observerInforExecutor);
+		watcher = verifyAndGetManager().create(WORKSPACE, asynListenerExecutor);
 		resource = watcher.watchFile(originContent, TEST_FILE_NAME);
 
 		// Fixes test-run on MacOSX because WatchService is not ready when the

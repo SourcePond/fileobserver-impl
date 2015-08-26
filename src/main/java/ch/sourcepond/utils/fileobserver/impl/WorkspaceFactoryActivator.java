@@ -18,6 +18,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
@@ -32,11 +33,26 @@ import ch.sourcepond.utils.fileobserver.WorkspaceFactory;
 /**
  *
  */
-public final class WatchManagerActivator implements BundleActivator, WorkspaceFactory, CloseObserver<DefaultWorkspace> {
-	private static final Logger LOG = getLogger(WatchManagerActivator.class);
-	private final Set<DefaultWorkspace> workspaces = new HashSet<>();
-	private final DefaultWorkspaceFactory factory = new DefaultWorkspaceFactory();
+public final class WorkspaceFactoryActivator implements BundleActivator, WorkspaceFactory, CloseObserver<DefaultWorkspace> {
+	private static final Logger LOG = getLogger(WorkspaceFactoryActivator.class);
+	private final Set<DefaultWorkspace> workspaces;
+	private final DefaultWorkspaceFactory factory;
 	private ServiceRegistration<WorkspaceFactory> registration;
+
+	/**
+	 * 
+	 */
+	public WorkspaceFactoryActivator() {
+		this(new DefaultWorkspaceFactory(), new HashSet<DefaultWorkspace>());
+	}
+
+	/**
+	 * @param pFactory
+	 */
+	WorkspaceFactoryActivator(final DefaultWorkspaceFactory pFactory, final Set<DefaultWorkspace> pWorkspaces) {
+		factory = pFactory;
+		workspaces = pWorkspaces;
+	}
 
 	/*
 	 * (non-Javadoc)
@@ -60,14 +76,17 @@ public final class WatchManagerActivator implements BundleActivator, WorkspaceFa
 	 */
 	@Override
 	public void stop(final BundleContext context) throws Exception {
-		synchronized (workspaces) {
-			for (final DefaultWorkspace ws : workspaces) {
-				ws.close();
-			}
-		}
 		if (registration != null) {
 			registration.unregister();
+
+			synchronized (workspaces) {
+				for (final Iterator<DefaultWorkspace> it = workspaces.iterator(); it.hasNext();) {
+					it.next().close();
+					it.remove();
+				}
+			}
 		}
+
 		if (LOG.isInfoEnabled()) {
 			LOG.info("Unregistered " + WorkspaceFactory.class.getName() + " service");
 		}

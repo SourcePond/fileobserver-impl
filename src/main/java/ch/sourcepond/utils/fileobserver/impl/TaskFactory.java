@@ -28,6 +28,6 @@ class TaskFactory {
 	 * @return
 	 */
 	Runnable newObserverTask(final ResourceChangeListener pObserver, final ResourceEvent pEvent) {
-		return new InformObserverTask(pObserver, pEvent);
+		return new InformListenerTask(pObserver, pEvent);
 	}
 }

@@ -53,7 +53,7 @@ import ch.sourcepond.utils.fileobserver.Workspace;
  * @author rolandhauser
  *
  */
-final class DefaultWorkspace implements Workspace, Runnable {
+class DefaultWorkspace implements Workspace, Runnable {
 	private static final Logger LOG = getLogger(DefaultWorkspace.class);
 	private final Map<URL, DefaultResource> managedResourcesCache;
 	private final ConcurrentMap<Path, DefaultResource> watcherThreadCache;
