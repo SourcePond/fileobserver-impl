@@ -16,7 +16,7 @@ import ch.sourcepond.utils.fileobserver.WorkspaceLockedException;
 /**
  *
  */
-public final class WatchManagerActivator implements BundleActivator, WorkspaceFactory, CloseCallback<DefaultWorkspace> {
+public final class WatchManagerActivator implements BundleActivator, WorkspaceFactory, CloseObserver<DefaultWorkspace> {
 	private final Set<DefaultWorkspace> workspaces = new HashSet<>();
 	private final DefaultWorkspaceFactory factory = new DefaultWorkspaceFactory();
 
@@ -66,7 +66,7 @@ public final class WatchManagerActivator implements BundleActivator, WorkspaceFa
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see ch.sourcepond.utils.fileobserver.impl.CloseCallback#closed(java.io.
+	 * @see ch.sourcepond.utils.fileobserver.impl.CloseObserver#closed(java.io.
 	 * Closeable)
 	 */
 	@Override

@@ -1,8 +1,22 @@
+/*Copyright (C) 2015 Roland Hauser, <sourcepond@gmail.com>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.*/
 package ch.sourcepond.utils.fileobserver.impl;
 
 import static java.nio.file.Files.newInputStream;
 import static org.slf4j.LoggerFactory.getLogger;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -13,6 +27,7 @@ import java.util.concurrent.ExecutorService;
 
 import org.slf4j.Logger;
 
+import ch.sourcepond.utils.fileobserver.Resource;
 import ch.sourcepond.utils.fileobserver.ResourceChangeListener;
 import ch.sourcepond.utils.fileobserver.ResourceEvent;
 import ch.sourcepond.utils.fileobserver.ResourceEvent.Type;
@@ -21,21 +36,21 @@ import ch.sourcepond.utils.fileobserver.ResourceEvent.Type;
  * @author rolandhauser
  *
  */
-final class DefaultResource implements InternalResource {
+final class DefaultResource implements Resource, Closeable {
 	private static final Logger LOG = getLogger(DefaultResource.class);
 	private final Set<ResourceChangeListener> listeners = new HashSet<>();
 	private final ExecutorService executor;
 	private final TaskFactory taskFactory;
 	private final URL originContent;
 	private final Path storagePath;
-	private final CloseCallback<DefaultResource> callback;
+	private final CloseObserver<DefaultResource> callback;
 	private volatile boolean closed;
 
 	/**
 	 * @param pOrigin
 	 */
 	DefaultResource(final ExecutorService pExecutor, final TaskFactory pTaskFactory, final URL pOriginalContent,
-			final Path pStoragePath, final CloseCallback<DefaultResource> pCallback) {
+			final Path pStoragePath, final CloseObserver<DefaultResource> pCallback) {
 		executor = pExecutor;
 		taskFactory = pTaskFactory;
 		originContent = pOriginalContent;
@@ -107,14 +122,10 @@ final class DefaultResource implements InternalResource {
 		executor.execute(taskFactory.newObserverTask(pObserver, pEvent, this));
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see ch.sourcepond.utils.fileobserver.impl.InternalResource#
-	 * informObservers()
+	/**
+	 * @param pType
 	 */
-	@Override
-	public void informListeners(final ResourceEvent.Type pType) {
+	void informListeners(final ResourceEvent.Type pType) {
 		final ResourceEvent event = new ResourceEvent(this, pType);
 		for (final ResourceChangeListener listener : listeners) {
 			fireEvent(listener, event);

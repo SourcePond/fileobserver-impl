@@ -24,7 +24,7 @@ class TaskFactory {
 	 * @return
 	 */
 	Runnable newObserverTask(final ResourceChangeListener pObserver, final ResourceEvent pEvent,
-			final InternalResource pResource) {
+			final DefaultResource pResource) {
 		return new InformObserverTask(pObserver, pEvent, pResource);
 	}
 }

@@ -1,3 +1,16 @@
+/*Copyright (C) 2015 Roland Hauser, <sourcepond@gmail.com>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.*/
 package ch.sourcepond.utils.fileobserver.impl;
 
 import java.io.IOException;
@@ -17,7 +30,7 @@ import ch.sourcepond.utils.fileobserver.WorkspaceLockedException;
  */
 @Named // Necessary to let Eclipse Sisu discover this class
 @Singleton
-public class DefaultWorkspaceFactory implements WorkspaceFactory, CloseCallback<DefaultWorkspace> {
+public class DefaultWorkspaceFactory implements WorkspaceFactory, CloseObserver<DefaultWorkspace> {
 	private final Runtime runtime;
 	private final TaskFactory taskFactory;
 
@@ -57,14 +70,14 @@ public class DefaultWorkspaceFactory implements WorkspaceFactory, CloseCallback<
 	 * @throws IOException
 	 */
 	DefaultWorkspace create(final Path pWorkspace, final ExecutorService pObserverInformExecutor,
-			final CloseCallback<DefaultWorkspace> pCallback) throws WorkspaceLockedException, IOException {
+			final CloseObserver<DefaultWorkspace> pCallback) throws WorkspaceLockedException, IOException {
 		return new DefaultWorkspace(runtime, pWorkspace, taskFactory, pObserverInformExecutor, pCallback);
 	}
 
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see ch.sourcepond.utils.fileobserver.impl.CloseCallback#closed(java.io.
+	 * @see ch.sourcepond.utils.fileobserver.impl.CloseObserver#closed(java.io.
 	 * Closeable)
 	 */
 	@Override
