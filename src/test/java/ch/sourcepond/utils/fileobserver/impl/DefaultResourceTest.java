@@ -3,6 +3,7 @@ package ch.sourcepond.utils.fileobserver.impl;
 import static ch.sourcepond.utils.fileobserver.ResourceEvent.Type.LISTENER_ADDED;
 import static ch.sourcepond.utils.fileobserver.ResourceEvent.Type.LISTENER_REMOVED;
 import static ch.sourcepond.utils.fileobserver.ResourceEvent.Type.RESOURCE_CREATED;
+import static ch.sourcepond.utils.fileobserver.ResourceEvent.Type.WORKSPACE_CLOSED;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.mockito.Mockito.inOrder;
@@ -111,7 +112,7 @@ public class DefaultResourceTest {
 	/**
 	 * @throws IOException
 	 */
-	@Test(expected = IllegalStateException.class)
+	@Test(expected = IOException.class)
 	public void tryOpenWhenClosed() throws IOException {
 		resource.close();
 		resource.open();
@@ -204,13 +205,13 @@ public class DefaultResourceTest {
 		when(taskFactory.newObserverTask(Mockito.eq(listener), event(LISTENER_ADDED))).thenReturn(r1);
 		resource.addListener(listener);
 		final Runnable r2 = mock(Runnable.class);
-		when(taskFactory.newObserverTask(Mockito.eq(listener), event(LISTENER_REMOVED))).thenReturn(r2);
+		when(taskFactory.newObserverTask(Mockito.eq(listener), event(WORKSPACE_CLOSED))).thenReturn(r2);
 		resource.close();
 
 		final InOrder order = inOrder(taskFactory, executor);
 		order.verify(taskFactory).newObserverTask(Mockito.eq(listener), event(LISTENER_ADDED));
 		order.verify(executor).execute(r1);
-		order.verify(taskFactory).newObserverTask(Mockito.eq(listener), event(LISTENER_REMOVED));
+		order.verify(taskFactory).newObserverTask(Mockito.eq(listener), event(WORKSPACE_CLOSED));
 		order.verify(executor).execute(r2);
 
 		// Further close should not have any effect

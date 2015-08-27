@@ -297,7 +297,7 @@ public class DefaultWorkspaceTest extends BaseDefaultWorkspaceTest {
 		try {
 			res.open();
 			fail("Exception expected here");
-		} catch (final IllegalStateException expected) {
+		} catch (final IOException expected) {
 			// expected
 		}
 	}
