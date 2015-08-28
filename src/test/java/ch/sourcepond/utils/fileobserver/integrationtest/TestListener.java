@@ -88,7 +88,7 @@ public final class TestListener implements ResourceChangeListener {
 	@Override
 	public void resourceChange(final ResourceEvent pEvent) {
 		lock.lock();
-		try (final InputStream in = pEvent.getSource().open()) {
+		try (final InputStream in = pEvent.getSource().openStream()) {
 			props.load(in);
 		} catch (final IOException e) {
 			exception = e;

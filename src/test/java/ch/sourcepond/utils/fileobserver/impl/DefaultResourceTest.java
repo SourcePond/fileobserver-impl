@@ -106,7 +106,7 @@ public class DefaultResourceTest {
 	@Test
 	public void verifyOpen() throws IOException {
 		when(provider.newInputStream(storagePath)).thenReturn(in);
-		assertSame(in, resource.open());
+		assertSame(in, resource.openStream());
 	}
 
 	/**
@@ -115,7 +115,7 @@ public class DefaultResourceTest {
 	@Test(expected = IOException.class)
 	public void tryOpenWhenClosed() throws IOException {
 		resource.close();
-		resource.open();
+		resource.openStream();
 	}
 
 	/**

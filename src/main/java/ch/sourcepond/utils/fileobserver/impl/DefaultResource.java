@@ -13,13 +13,16 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.utils.fileobserver.impl;
 
+import static java.nio.channels.FileChannel.open;
 import static java.nio.file.Files.newInputStream;
+import static java.nio.file.StandardOpenOption.READ;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.ExecutorService;
@@ -55,8 +58,23 @@ class DefaultResource extends BaseResource implements Closeable {
 	 * @see ch.sourcepond.utils.fileobserver.impl.WatchedFile#open()
 	 */
 	@Override
-	protected InputStream doOpen() throws IOException {
+	protected InputStream doOpenStream() throws IOException {
 		return newInputStream(getStoragePath());
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see ch.sourcepond.utils.fileobserver.impl.WatchedFile#open()
+	 */
+	@Override
+	public final FileChannel openChannel() throws IOException {
+		synchronized (getListeners()) {
+			if (getState().isClosed()) {
+				throw new IOException("Workspace has been closed!");
+			}
+		}
+		return open(getStoragePath(), READ);
 	}
 
 	/**

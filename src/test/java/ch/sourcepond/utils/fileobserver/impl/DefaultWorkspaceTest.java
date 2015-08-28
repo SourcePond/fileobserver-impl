@@ -295,7 +295,7 @@ public class DefaultWorkspaceTest extends BaseDefaultWorkspaceTest {
 		workspace.close();
 
 		try {
-			res.open();
+			res.openStream();
 			fail("Exception expected here");
 		} catch (final IOException expected) {
 			// expected
