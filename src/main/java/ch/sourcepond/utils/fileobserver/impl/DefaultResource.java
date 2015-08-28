@@ -20,6 +20,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.ExecutorService;
 
@@ -101,5 +102,15 @@ class DefaultResource extends BaseResource implements Closeable {
 	@Override
 	protected Logger getLog() {
 		return LOG;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see ch.sourcepond.utils.fileobserver.commons.BaseResource#doesExist()
+	 */
+	@Override
+	protected boolean doesExist() {
+		return Files.exists(getStoragePath());
 	}
 }
