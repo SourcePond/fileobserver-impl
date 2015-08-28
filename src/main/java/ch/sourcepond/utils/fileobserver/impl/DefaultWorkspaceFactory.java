@@ -15,6 +15,7 @@ package ch.sourcepond.utils.fileobserver.impl;
 
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -57,35 +58,28 @@ public class DefaultWorkspaceFactory extends BaseWorkspaceFactory<DefaultResourc
 		taskFactory = pTaskFactory;
 	}
 
-	/**
-	 * @param pStorageDirectory
-	 * @return
-	 * @throws IOException
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * ch.sourcepond.utils.fileobserver.commons.BaseWorkspaceFactory#create(ch.
+	 * sourcepond.utils.fileobserver.commons.CloseObserver,
+	 * java.util.concurrent.ExecutorService, java.nio.file.FileSystem,
+	 * java.lang.String)
 	 */
 	@Override
-	public DefaultWorkspace create(final Path pWorkspace, final ExecutorService pAsynListenerExecutor)
-			throws IOException {
-		return create(pWorkspace, pAsynListenerExecutor, this);
-	}
+	protected DefaultWorkspace create(final CloseObserver<DefaultWorkspace> pCloseObserver,
+			final ExecutorService pAsynListenerExecutor, final FileSystem pFs, final String pBaseWorkspacePath,
+			final String... pWorkspacePath) throws IOException {
+		final Path workspacePath = pFs.getPath(pBaseWorkspacePath, pWorkspacePath);
 
-	/**
-	 * @param pWorkspace
-	 * @param pObserverInformExecutor
-	 * @param pCloseObserver
-	 * @return
-	 * @throws WorkspaceLockedException
-	 * @throws IOException
-	 */
-	@Override
-	protected DefaultWorkspace create(final Path pWorkspace, final ExecutorService pAsynListenerExecutor,
-			final CloseObserver<DefaultWorkspace> pCloseObserver) throws IOException {
 		// Create workspace instance
-		final DefaultWorkspace workspace = new DefaultWorkspace(runtime, new CloseState(), pWorkspace, taskFactory,
+		final DefaultWorkspace workspace = new DefaultWorkspace(runtime, new CloseState(), workspacePath, taskFactory,
 				pAsynListenerExecutor, pCloseObserver, new HashMap<URL, DefaultResource>(),
 				new ConcurrentHashMap<Path, DefaultResource>());
 
 		// Create and set all necessary threads on workspace
-		final Thread watcherThread = threadFactory.newWatcher(workspace, pWorkspace);
+		final Thread watcherThread = threadFactory.newWatcher(workspace, workspacePath);
 		final Thread shutdownHook = threadFactory.newShutdownHook(workspace);
 		workspace.setWatcherThread(watcherThread);
 		workspace.setShutdownHook(shutdownHook);

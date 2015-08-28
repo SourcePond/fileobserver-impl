@@ -47,9 +47,11 @@ class DefaultResource extends BaseResource implements Closeable {
 	 * @param pOrigin
 	 */
 	DefaultResource(final ExecutorService pAsynListenerExecutor, final TaskFactory pTaskFactory,
-			final URL pOriginalContent, final Path pStoragePath, final CloseState pState) {
+			final URL pOriginalContent, final Path pStoragePath, final CloseState pState) throws IOException {
 		super(pOriginalContent, pTaskFactory, pAsynListenerExecutor, pState);
 		storagePath = pStoragePath;
+		// Initial update of the storage file checksum
+		updateChecksum();
 	}
 
 	/*

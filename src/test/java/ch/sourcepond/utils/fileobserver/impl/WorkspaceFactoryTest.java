@@ -1,6 +1,5 @@
 package ch.sourcepond.utils.fileobserver.impl;
 
-import static ch.sourcepond.utils.fileobserver.Constants.WORKSPACE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -9,6 +8,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.nio.file.FileSystem;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -26,7 +26,9 @@ import ch.sourcepond.utils.fileobserver.WorkspaceFactory;
  *
  */
 public class WorkspaceFactoryTest {
+	private static final String WORKSPACE_PATH = "anyPath";
 	private final BundleContext context = mock(BundleContext.class);
+	private final FileSystem fs = mock(FileSystem.class);
 	private final ExecutorService executor = mock(ExecutorService.class);
 	private final DefaultWorkspaceFactory factory = mock(DefaultWorkspaceFactory.class);
 	private final DefaultWorkspace workspace = mock(DefaultWorkspace.class);
@@ -39,7 +41,7 @@ public class WorkspaceFactoryTest {
 	 */
 	@Before
 	public void setup() throws Exception {
-		when(factory.create(WORKSPACE, executor, activator)).thenReturn(workspace);
+		when(factory.create(activator, executor, fs, WORKSPACE_PATH)).thenReturn(workspace);
 		when(context.registerService(WorkspaceFactory.class, activator, null)).thenReturn(registration);
 	}
 
@@ -58,7 +60,7 @@ public class WorkspaceFactoryTest {
 	@Test
 	public void verifyStartCreateStop() throws Exception {
 		activator.start(context);
-		assertSame(workspace, activator.create(WORKSPACE, executor));
+		assertSame(workspace, activator.create(executor, fs, WORKSPACE_PATH));
 		assertEquals(1, openWorkspaces.size());
 		activator.stop(context);
 		assertTrue(openWorkspaces.isEmpty());
@@ -74,7 +76,7 @@ public class WorkspaceFactoryTest {
 	 */
 	@Test
 	public void verifyCloseObserver() throws IOException {
-		activator.create(WORKSPACE, executor);
+		activator.create(executor, fs, WORKSPACE_PATH);
 		activator.closed(workspace);
 		assertTrue(openWorkspaces.isEmpty());
 	}

@@ -13,6 +13,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -61,12 +62,14 @@ public class DefaultResourceTest {
 		}
 	};
 
+	private static final int TEST_BYTE = 211;
 	private final ExecutorService executor = mock(ExecutorService.class);
 	private final TaskFactory taskFactory = mock(TaskFactory.class);
 	private final FileSystem fs = mock(FileSystem.class);
 	private final FileSystemProvider provider = mock(FileSystemProvider.class);
 	private final Path storagePath = mock(Path.class);
-	private final InputStream in = mock(InputStream.class);
+	private final InputStream in = new ByteArrayInputStream(new byte[] { (byte) TEST_BYTE });
+	private final InputStream storagePathInput = new ByteArrayInputStream(new byte[] { (byte) TEST_BYTE });
 	private final ResourceChangeListener listener = mock(ResourceChangeListener.class);
 	private final Runnable listenerTask = mock(Runnable.class);
 	private URL originContent;
@@ -78,6 +81,7 @@ public class DefaultResourceTest {
 	@Before
 	public void setup() throws Exception {
 		when(fs.provider()).thenReturn(provider);
+		when(provider.newInputStream(storagePath)).thenReturn(storagePathInput);
 		when(storagePath.getFileSystem()).thenReturn(fs);
 		originContent = new URL("file:///anyResource");
 		resource = new DefaultResource(executor, taskFactory, originContent, storagePath, new CloseState());
@@ -106,7 +110,7 @@ public class DefaultResourceTest {
 	@Test
 	public void verifyOpen() throws IOException {
 		when(provider.newInputStream(storagePath)).thenReturn(in);
-		assertSame(in, resource.openStream());
+		assertEquals(TEST_BYTE, resource.openStream().read());
 	}
 
 	/**
@@ -149,6 +153,7 @@ public class DefaultResourceTest {
 
 		// Registering a listener twice has no effect
 		resource.addListener(listener);
+		verify(storagePath).getFileSystem();
 		verifyNoMoreInteractions(taskFactory, executor, storagePath);
 
 		when(taskFactory.newObserverTask(Mockito.eq(listener), event(LISTENER_REMOVED))).thenReturn(listenerTask);

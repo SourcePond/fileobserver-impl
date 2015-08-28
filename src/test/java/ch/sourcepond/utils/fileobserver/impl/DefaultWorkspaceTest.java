@@ -151,6 +151,7 @@ public class DefaultWorkspaceTest extends BaseDefaultWorkspaceTest {
 		order.verify(provider).deleteIfExists(absoluteFile);
 		order.verify(provider).newOutputStream(absoluteFile, CREATE_NEW, WRITE);
 		order.verify(workspacePath).register(watchService, ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE);
+		order.verify(provider).newInputStream(absoluteFile);
 
 		// Once created a resource must be shared
 		assertSame(res, workspace.watchFile(originContent, DIR_1, DIR_2, FILE));
@@ -172,6 +173,7 @@ public class DefaultWorkspaceTest extends BaseDefaultWorkspaceTest {
 		order.verify(provider, never()).deleteIfExists(absoluteFile);
 		order.verify(provider).newOutputStream(absoluteFile, CREATE_NEW, WRITE);
 		order.verify(workspacePath).register(watchService, ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE);
+		order.verify(provider).newInputStream(absoluteFile);
 
 		// Once created a resource must be shared
 		assertSame(res, workspace.watchFile(originContent, false, DIR_1, DIR_2, FILE));

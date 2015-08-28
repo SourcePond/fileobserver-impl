@@ -3,7 +3,9 @@ package ch.sourcepond.utils.fileobserver.impl;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
@@ -41,6 +43,7 @@ public abstract class BaseDefaultWorkspaceTest {
 	protected final Path dir2 = mock(Path.class);
 	protected final Path file = mock(Path.class);
 	protected final Path absoluteFile = mock(Path.class);
+	protected final InputStream storagePathInputStream = new ByteArrayInputStream(new byte[0]);
 	protected final WatchService watchService = mock(WatchService.class);
 	protected final Path workspacePath = mock(Path.class);
 	protected final Map<URL, DefaultResource> managedResourcesCache = new HashMap<>();
@@ -66,6 +69,7 @@ public abstract class BaseDefaultWorkspaceTest {
 		when(file.getFileSystem()).thenReturn(fs);
 		when(file.toAbsolutePath()).thenReturn(absoluteFile);
 		when(absoluteFile.getFileSystem()).thenReturn(fs);
+		when(provider.newInputStream(absoluteFile)).thenReturn(storagePathInputStream);
 
 		workspace = new DefaultWorkspace(runtime, state, workspacePath, taskFactory, executor, closeObserver,
 				managedResourcesCache, watcherThreadCache);

@@ -25,6 +25,7 @@ import ch.sourcepond.utils.fileobserver.commons.TaskFactory;
  *
  */
 public class DefaultWorkspaceFactoryTest {
+	private static final String WORKSPACE_PATH = "anyPath";
 	private final Runtime runtime = mock(Runtime.class);
 	private final Thread watcherThread = mock(Thread.class);
 	private final Thread shutdownHook = mock(Thread.class);
@@ -43,6 +44,7 @@ public class DefaultWorkspaceFactoryTest {
 	 */
 	@Before
 	public void setup() throws IOException {
+		when(fs.getPath(WORKSPACE_PATH)).thenReturn(workspace);
 		when(workspace.getFileSystem()).thenReturn(fs);
 		when(fs.newWatchService()).thenReturn(watchService);
 		when(threadFactory.newWatcher(workspaceMatcher(), Mockito.eq(workspace))).thenReturn(watcherThread);
@@ -89,7 +91,7 @@ public class DefaultWorkspaceFactoryTest {
 	 */
 	@Test
 	public void verifyPublicCreate() throws IOException {
-		verifyWorkspaceCreation(factory.create(workspace, asynListenerExecutor));
+		verifyWorkspaceCreation(factory.create(asynListenerExecutor, fs, WORKSPACE_PATH));
 	}
 
 	/**
@@ -97,7 +99,7 @@ public class DefaultWorkspaceFactoryTest {
 	 */
 	@Test
 	public void verifyCreate() throws IOException {
-		final DefaultWorkspace ws = factory.create(workspace, asynListenerExecutor, closeObserver);
+		final DefaultWorkspace ws = factory.create(closeObserver, asynListenerExecutor, fs, WORKSPACE_PATH);
 		verifyWorkspaceCreation(ws);
 		verify(closeObserver).closed(ws);
 	}
