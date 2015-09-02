@@ -15,33 +15,19 @@ package ch.sourcepond.utils.fileobserver.impl;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import org.slf4j.Logger;
 
-import ch.sourcepond.utils.fileobserver.Workspace;
+import ch.sourcepond.utils.fileobserver.WorkspaceFactory;
 import ch.sourcepond.utils.fileobserver.commons.BaseWorkspaceFactoryActivator;
 
 /**
  *
  */
-public final class WorkspaceFactoryActivator
-		extends BaseWorkspaceFactoryActivator<DefaultResource, DefaultWorkspace, DefaultWorkspaceFactory> {
+public final class WorkspaceFactoryActivator extends BaseWorkspaceFactoryActivator {
 	private static final Logger LOG = getLogger(WorkspaceFactoryActivator.class);
 
-	/**
-	 * 
-	 */
-	public WorkspaceFactoryActivator() {
-		this(new DefaultWorkspaceFactory(), new HashSet<Workspace>());
-	}
-
-	/**
-	 * @param pFactory
-	 */
-	WorkspaceFactoryActivator(final DefaultWorkspaceFactory pFactory, final Set<Workspace> pWorkspaces) {
-		super(pFactory, pWorkspaces);
+	protected WorkspaceFactoryActivator(final WorkspaceFactory pFactory) {
+		super(pFactory);
 	}
 
 	/*

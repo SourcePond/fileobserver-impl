@@ -42,6 +42,7 @@ import java.util.concurrent.ExecutorService;
 
 import org.slf4j.Logger;
 
+import ch.sourcepond.utils.fileobserver.Resource;
 import ch.sourcepond.utils.fileobserver.ResourceEvent;
 import ch.sourcepond.utils.fileobserver.ResourceEvent.Type;
 import ch.sourcepond.utils.fileobserver.commons.BaseWorkspace;
@@ -53,13 +54,13 @@ import ch.sourcepond.utils.fileobserver.commons.TaskFactory;
  * @author rolandhauser
  *
  */
-class DefaultWorkspace extends BaseWorkspace<DefaultResource>implements Runnable {
+class DefaultWorkspace extends BaseWorkspace implements Runnable {
 	private static final Logger LOG = getLogger(DefaultWorkspace.class);
 	private final ConcurrentMap<Path, DefaultResource> watcherThreadCache;
 	private final Runtime runtime;
 	private final Path workspace;
 	private final WatchService watchService;
-	private final CloseObserver<DefaultWorkspace> closeObserver;
+	private final CloseObserver closeObserver;
 	private Thread watcherThread;
 	private Thread shutdownHook;
 
@@ -70,8 +71,7 @@ class DefaultWorkspace extends BaseWorkspace<DefaultResource>implements Runnable
 	 */
 	DefaultWorkspace(final Runtime pRuntime, final CloseState pState, final Path pWorkspace,
 			final TaskFactory pTaskFactory, final ExecutorService pAsynListenerExecutor,
-			final CloseObserver<DefaultWorkspace> pCloseObserver,
-			final Map<URL, DefaultResource> pManagedResourcesCache,
+			final CloseObserver pCloseObserver, final Map<URL, Resource> pManagedResourcesCache,
 			final ConcurrentMap<Path, DefaultResource> pWatcherThreadCache) throws IOException {
 		super(pManagedResourcesCache, pAsynListenerExecutor, pTaskFactory, pState);
 		assert pRuntime != null;
@@ -163,8 +163,14 @@ class DefaultWorkspace extends BaseWorkspace<DefaultResource>implements Runnable
 
 				// Close all watcherThreadCache managed by this workspace
 				// object.
-				for (final DefaultResource rs : getManagedResourcesCache().values()) {
-					rs.close();
+				for (final Resource rs : getManagedResourcesCache().values()) {
+					try {
+						rs.close();
+					} catch (final IOException e) {
+						if (LOG.isDebugEnabled()) {
+							LOG.debug(e.getMessage(), e);
+						}
+					}
 				}
 
 				// Clear the map which holds the origin-url to resource

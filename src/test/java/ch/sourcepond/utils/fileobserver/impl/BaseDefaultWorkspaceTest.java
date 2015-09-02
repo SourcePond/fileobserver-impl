@@ -19,6 +19,7 @@ import java.util.concurrent.ExecutorService;
 
 import org.junit.Before;
 
+import ch.sourcepond.utils.fileobserver.Resource;
 import ch.sourcepond.utils.fileobserver.commons.CloseObserver;
 import ch.sourcepond.utils.fileobserver.commons.CloseState;
 import ch.sourcepond.utils.fileobserver.commons.TaskFactory;
@@ -35,7 +36,7 @@ public abstract class BaseDefaultWorkspaceTest {
 	protected final TaskFactory taskFactory = mock(TaskFactory.class);
 	protected final ExecutorService executor = mock(ExecutorService.class);
 	@SuppressWarnings("unchecked")
-	protected final CloseObserver<DefaultWorkspace> closeObserver = mock(CloseObserver.class);
+	protected final CloseObserver closeObserver = mock(CloseObserver.class);
 	protected final CloseState state = newState();
 	protected final FileSystem fs = mock(FileSystem.class);
 	protected final FileSystemProvider provider = mock(FileSystemProvider.class);
@@ -46,7 +47,7 @@ public abstract class BaseDefaultWorkspaceTest {
 	protected final InputStream storagePathInputStream = new ByteArrayInputStream(new byte[0]);
 	protected final WatchService watchService = mock(WatchService.class);
 	protected final Path workspacePath = mock(Path.class);
-	protected final Map<URL, DefaultResource> managedResourcesCache = new HashMap<>();
+	protected final Map<URL, Resource> managedResourcesCache = new HashMap<>();
 	protected final ConcurrentMap<Path, DefaultResource> watcherThreadCache = new ConcurrentHashMap<>();
 	protected DefaultWorkspace workspace;
 

@@ -13,9 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.utils.fileobserver.impl;
 
+import static org.slf4j.LoggerFactory.getLogger;
+
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,8 +26,11 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 
+import org.slf4j.Logger;
+
+import ch.sourcepond.utils.fileobserver.Resource;
+import ch.sourcepond.utils.fileobserver.Workspace;
 import ch.sourcepond.utils.fileobserver.commons.BaseWorkspaceFactory;
-import ch.sourcepond.utils.fileobserver.commons.CloseObserver;
 import ch.sourcepond.utils.fileobserver.commons.CloseState;
 import ch.sourcepond.utils.fileobserver.commons.TaskFactory;
 
@@ -35,7 +39,8 @@ import ch.sourcepond.utils.fileobserver.commons.TaskFactory;
  */
 @Named // Necessary to let Eclipse Sisu discover this class
 @Singleton
-public class DefaultWorkspaceFactory extends BaseWorkspaceFactory<DefaultResource, DefaultWorkspace> {
+public class DefaultWorkspaceFactory extends BaseWorkspaceFactory {
+	private static final Logger LOG = getLogger(DefaultWorkspaceFactory.class);
 	private final Runtime runtime;
 	private final ThreadFactory threadFactory;
 	private final TaskFactory taskFactory;
@@ -62,24 +67,19 @@ public class DefaultWorkspaceFactory extends BaseWorkspaceFactory<DefaultResourc
 	 * (non-Javadoc)
 	 * 
 	 * @see
-	 * ch.sourcepond.utils.fileobserver.commons.BaseWorkspaceFactory#create(ch.
-	 * sourcepond.utils.fileobserver.commons.CloseObserver,
-	 * java.util.concurrent.ExecutorService, java.nio.file.FileSystem,
-	 * java.lang.String)
+	 * ch.sourcepond.utils.fileobserver.commons.BaseWorkspaceFactory#doCreate(
+	 * java.util.concurrent.ExecutorService,
+	 * java.util.concurrent.ExecutorService, java.nio.file.Path)
 	 */
 	@Override
-	protected DefaultWorkspace create(final CloseObserver<DefaultWorkspace> pCloseObserver,
-			final ExecutorService pAsynListenerExecutor, final FileSystem pFs, final String pBaseWorkspacePath,
-			final String... pWorkspacePath) throws IOException {
-		final Path workspacePath = pFs.getPath(pBaseWorkspacePath, pWorkspacePath);
-
+	protected Workspace doCreate(final ExecutorService pListenerNotifier, final ExecutorService pChecksumCalculator,
+			final Path pWorkspace) throws IOException {
 		// Create workspace instance
-		final DefaultWorkspace workspace = new DefaultWorkspace(runtime, new CloseState(), workspacePath, taskFactory,
-				pAsynListenerExecutor, pCloseObserver, new HashMap<URL, DefaultResource>(),
-				new ConcurrentHashMap<Path, DefaultResource>());
+		final DefaultWorkspace workspace = new DefaultWorkspace(runtime, new CloseState(), pWorkspace, taskFactory,
+				pListenerNotifier, this, new HashMap<URL, Resource>(), new ConcurrentHashMap<Path, DefaultResource>());
 
 		// Create and set all necessary threads on workspace
-		final Thread watcherThread = threadFactory.newWatcher(workspace, workspacePath);
+		final Thread watcherThread = threadFactory.newWatcher(workspace, pWorkspace);
 		final Thread shutdownHook = threadFactory.newShutdownHook(workspace);
 		workspace.setWatcherThread(watcherThread);
 		workspace.setShutdownHook(shutdownHook);
@@ -93,11 +93,11 @@ public class DefaultWorkspaceFactory extends BaseWorkspaceFactory<DefaultResourc
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see ch.sourcepond.utils.fileobserver.impl.CloseObserver#closed(java.io.
-	 * Closeable)
+	 * @see
+	 * ch.sourcepond.utils.fileobserver.commons.BaseWorkspaceFactory#getLog()
 	 */
 	@Override
-	public void closed(final DefaultWorkspace pSource) {
-		// noop
+	protected Logger getLog() {
+		return LOG;
 	}
 }
