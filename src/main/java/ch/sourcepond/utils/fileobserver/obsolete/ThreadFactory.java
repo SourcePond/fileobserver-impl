@@ -1,4 +1,4 @@
-package ch.sourcepond.utils.fileobserver.impl;
+package ch.sourcepond.utils.fileobserver.obsolete;
 
 import java.nio.file.Path;
 

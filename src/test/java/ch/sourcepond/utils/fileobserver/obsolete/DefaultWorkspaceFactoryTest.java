@@ -1,4 +1,4 @@
-package ch.sourcepond.utils.fileobserver.impl;
+package ch.sourcepond.utils.fileobserver.obsolete;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -20,6 +20,9 @@ import org.mockito.Mockito;
 
 import ch.sourcepond.utils.fileobserver.Workspace;
 import ch.sourcepond.utils.fileobserver.commons.TaskFactory;
+import ch.sourcepond.utils.fileobserver.obsolete.DefaultWorkspace;
+import ch.sourcepond.utils.fileobserver.obsolete.DefaultWorkspaceFactory;
+import ch.sourcepond.utils.fileobserver.obsolete.ThreadFactory;
 
 /**
  * @author rolandhauser

@@ -1,4 +1,4 @@
-package ch.sourcepond.utils.fileobserver.impl;
+package ch.sourcepond.utils.fileobserver.obsolete;
 
 import static java.nio.file.StandardOpenOption.CREATE_NEW;
 import static java.nio.file.StandardOpenOption.WRITE;
@@ -29,6 +29,7 @@ import org.mockito.InOrder;
 
 import ch.sourcepond.utils.fileobserver.Resource;
 import ch.sourcepond.utils.fileobserver.commons.CloseState;
+import ch.sourcepond.utils.fileobserver.obsolete.DefaultResource;
 
 /**
  * @author rolandhauser
@@ -79,7 +80,7 @@ public class DefaultWorkspaceTest extends BaseDefaultWorkspaceTest {
 	 * (non-Javadoc)
 	 * 
 	 * @see
-	 * ch.sourcepond.utils.fileobserver.impl.BaseDefaultWorkspaceTest#newState()
+	 * ch.sourcepond.utils.fileobserver.obsolete.BaseDefaultWorkspaceTest#newState()
 	 */
 	@Override
 	protected CloseState newState() {
@@ -91,7 +92,7 @@ public class DefaultWorkspaceTest extends BaseDefaultWorkspaceTest {
 	 */
 	@Test(expected = NullPointerException.class)
 	public void tryWatchFileWithNullOrigin() throws IOException {
-		workspace.watchFile(null, DIR_1, DIR_2, FILE);
+		workspace.copy(null, DIR_1, DIR_2, FILE);
 	}
 
 	/**
@@ -99,7 +100,7 @@ public class DefaultWorkspaceTest extends BaseDefaultWorkspaceTest {
 	 */
 	@Test(expected = IllegalArgumentException.class)
 	public void tryWatchFileWithNoPathTokens() throws IOException {
-		workspace.watchFile(originContent);
+		workspace.copy(originContent);
 	}
 
 	/**
@@ -107,7 +108,7 @@ public class DefaultWorkspaceTest extends BaseDefaultWorkspaceTest {
 	 */
 	@Test(expected = IllegalArgumentException.class)
 	public void tryWatchFileWithNullPathToken() throws IOException {
-		workspace.watchFile(originContent, DIR_1, DIR_2, null);
+		workspace.copy(originContent, DIR_1, DIR_2, null);
 	}
 
 	/**
@@ -115,7 +116,7 @@ public class DefaultWorkspaceTest extends BaseDefaultWorkspaceTest {
 	 */
 	@Test(expected = IllegalArgumentException.class)
 	public void tryWatchFileWithEmptyPathToken() throws IOException {
-		workspace.watchFile(originContent, DIR_1, "", FILE);
+		workspace.copy(originContent, DIR_1, "", FILE);
 	}
 
 	/**
@@ -123,7 +124,7 @@ public class DefaultWorkspaceTest extends BaseDefaultWorkspaceTest {
 	 */
 	@Test(expected = IllegalArgumentException.class)
 	public void tryWatchFileWithBlankPathToken() throws IOException {
-		workspace.watchFile(originContent, "	", DIR_2, FILE);
+		workspace.copy(originContent, "	", DIR_2, FILE);
 	}
 
 	/**
@@ -132,7 +133,7 @@ public class DefaultWorkspaceTest extends BaseDefaultWorkspaceTest {
 	@Test(expected = IllegalStateException.class)
 	public void tryWatchWhenClosed() throws IOException {
 		workspace.close();
-		workspace.watchFile(originContent, DIR_1, DIR_2, FILE);
+		workspace.copy(originContent, DIR_1, DIR_2, FILE);
 	}
 
 	/**
@@ -141,7 +142,7 @@ public class DefaultWorkspaceTest extends BaseDefaultWorkspaceTest {
 	@Test
 	public void watchFileReplaceExisting() throws IOException {
 		when(provider.newOutputStream(file, CREATE_NEW, WRITE)).thenReturn(fileOut);
-		final DefaultResource res = (DefaultResource) workspace.watchFile(originContent, DIR_1, DIR_2, FILE);
+		final DefaultResource res = (DefaultResource) workspace.copy(originContent, DIR_1, DIR_2, FILE);
 
 		assertSame(absoluteFile, res.getStoragePath());
 		assertSame(originContent, res.getOriginContent());
@@ -154,7 +155,7 @@ public class DefaultWorkspaceTest extends BaseDefaultWorkspaceTest {
 		order.verify(provider).newInputStream(absoluteFile);
 
 		// Once created a resource must be shared
-		assertSame(res, workspace.watchFile(originContent, DIR_1, DIR_2, FILE));
+		assertSame(res, workspace.copy(originContent, DIR_1, DIR_2, FILE));
 		order.verifyNoMoreInteractions();
 	}
 
@@ -164,7 +165,7 @@ public class DefaultWorkspaceTest extends BaseDefaultWorkspaceTest {
 	@Test
 	public void watchFileDoNotReplace() throws IOException {
 		when(provider.newOutputStream(file, CREATE_NEW, WRITE)).thenReturn(fileOut);
-		final DefaultResource res = (DefaultResource) workspace.watchFile(originContent, false, DIR_1, DIR_2, FILE);
+		final DefaultResource res = (DefaultResource) workspace.copy(originContent, false, DIR_1, DIR_2, FILE);
 
 		assertSame(absoluteFile, res.getStoragePath());
 		assertSame(originContent, res.getOriginContent());
@@ -176,7 +177,7 @@ public class DefaultWorkspaceTest extends BaseDefaultWorkspaceTest {
 		order.verify(provider).newInputStream(absoluteFile);
 
 		// Once created a resource must be shared
-		assertSame(res, workspace.watchFile(originContent, false, DIR_1, DIR_2, FILE));
+		assertSame(res, workspace.copy(originContent, false, DIR_1, DIR_2, FILE));
 		order.verifyNoMoreInteractions();
 	}
 
@@ -186,7 +187,7 @@ public class DefaultWorkspaceTest extends BaseDefaultWorkspaceTest {
 	@Test
 	public void verifyCloseClearCaches() throws IOException {
 		when(provider.newOutputStream(file, CREATE_NEW, WRITE)).thenReturn(fileOut);
-		workspace.watchFile(originContent, DIR_1, DIR_2, FILE);
+		workspace.copy(originContent, DIR_1, DIR_2, FILE);
 		assertEquals(1, managedResourcesCache.size());
 		assertEquals(1, watcherThreadCache.size());
 
@@ -290,7 +291,7 @@ public class DefaultWorkspaceTest extends BaseDefaultWorkspaceTest {
 	@Test
 	public void verifyCloseResources() throws IOException {
 		when(provider.newOutputStream(file, CREATE_NEW, WRITE)).thenReturn(fileOut);
-		final Resource res = workspace.watchFile(originContent, DIR_1, DIR_2, FILE);
+		final Resource res = workspace.copy(originContent, DIR_1, DIR_2, FILE);
 		workspace.close();
 
 		// Should have no effect

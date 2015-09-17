@@ -1,4 +1,4 @@
-package ch.sourcepond.utils.fileobserver.impl;
+package ch.sourcepond.utils.fileobserver.obsolete;
 
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import org.junit.Test;
 
 import ch.sourcepond.utils.fileobserver.Workspace;
+import ch.sourcepond.utils.fileobserver.obsolete.ThreadFactory;
 
 /**
  * @author rolandhauser

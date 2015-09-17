@@ -1,4 +1,4 @@
-package ch.sourcepond.utils.fileobserver.impl;
+package ch.sourcepond.utils.fileobserver.obsolete;
 
 import static ch.sourcepond.utils.fileobserver.ResourceEvent.Type.LISTENER_ADDED;
 import static ch.sourcepond.utils.fileobserver.ResourceEvent.Type.LISTENER_REMOVED;
@@ -34,6 +34,7 @@ import ch.sourcepond.utils.fileobserver.ResourceEvent;
 import ch.sourcepond.utils.fileobserver.ResourceEvent.Type;
 import ch.sourcepond.utils.fileobserver.commons.CloseState;
 import ch.sourcepond.utils.fileobserver.commons.TaskFactory;
+import ch.sourcepond.utils.fileobserver.obsolete.DefaultResource;
 
 /**
  * @author rolandhauser

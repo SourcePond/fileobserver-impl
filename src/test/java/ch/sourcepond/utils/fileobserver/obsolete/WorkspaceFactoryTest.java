@@ -1,4 +1,4 @@
-package ch.sourcepond.utils.fileobserver.impl;
+package ch.sourcepond.utils.fileobserver.obsolete;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
@@ -22,6 +22,9 @@ import org.osgi.framework.ServiceRegistration;
 
 import ch.sourcepond.utils.fileobserver.Workspace;
 import ch.sourcepond.utils.fileobserver.WorkspaceFactory;
+import ch.sourcepond.utils.fileobserver.obsolete.DefaultWorkspace;
+import ch.sourcepond.utils.fileobserver.obsolete.DefaultWorkspaceFactory;
+import ch.sourcepond.utils.fileobserver.obsolete.WorkspaceFactoryActivator;
 
 /**
  *

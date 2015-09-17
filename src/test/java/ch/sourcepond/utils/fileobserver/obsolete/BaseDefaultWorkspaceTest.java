@@ -1,4 +1,4 @@
-package ch.sourcepond.utils.fileobserver.impl;
+package ch.sourcepond.utils.fileobserver.obsolete;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -23,6 +23,8 @@ import ch.sourcepond.utils.fileobserver.Resource;
 import ch.sourcepond.utils.fileobserver.commons.CloseObserver;
 import ch.sourcepond.utils.fileobserver.commons.CloseState;
 import ch.sourcepond.utils.fileobserver.commons.TaskFactory;
+import ch.sourcepond.utils.fileobserver.obsolete.DefaultResource;
+import ch.sourcepond.utils.fileobserver.obsolete.DefaultWorkspace;
 
 /**
  *

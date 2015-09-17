@@ -25,8 +25,8 @@ import com.google.inject.Injector;
 import com.google.inject.Module;
 
 import ch.sourcepond.utils.fileobserver.WorkspaceFactory;
-import ch.sourcepond.utils.fileobserver.impl.DefaultWorkspaceFactory;
 import ch.sourcepond.utils.fileobserver.integrationtest.WatchManagerITCase;
+import ch.sourcepond.utils.fileobserver.obsolete.DefaultWorkspaceFactory;
 
 /**
  * @author rolandhauser

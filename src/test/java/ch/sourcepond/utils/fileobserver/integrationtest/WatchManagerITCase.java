@@ -77,7 +77,7 @@ public abstract class WatchManagerITCase {
 	public void setup() throws Exception {
 		originContent = getClass().getResource("/" + TEST_FILE_NAME);
 		watcher = verifyAndGetManager().create(asynListenerExecutor, WORKSPACE.getFileSystem(), WORKSPACE.toString());
-		resource = watcher.watchFile(originContent, TEST_FILE_NAME);
+		resource = watcher.copy(originContent, TEST_FILE_NAME);
 
 		// Fixes test-run on MacOSX because WatchService is not ready when the
 		// test actually starts.

@@ -11,7 +11,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.*/
-package ch.sourcepond.utils.fileobserver.impl;
+package ch.sourcepond.utils.fileobserver.obsolete;
 
 import static ch.sourcepond.utils.fileobserver.ResourceEvent.Type.RESOURCE_CREATED;
 import static ch.sourcepond.utils.fileobserver.ResourceEvent.Type.RESOURCE_DELETED;

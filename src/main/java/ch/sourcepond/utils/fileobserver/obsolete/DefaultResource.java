@@ -11,7 +11,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.*/
-package ch.sourcepond.utils.fileobserver.impl;
+package ch.sourcepond.utils.fileobserver.obsolete;
 
 import static java.nio.channels.FileChannel.open;
 import static java.nio.file.Files.newInputStream;
@@ -57,7 +57,7 @@ class DefaultResource extends BaseResource implements Closeable {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see ch.sourcepond.utils.fileobserver.impl.WatchedFile#open()
+	 * @see ch.sourcepond.utils.fileobserver.obsolete.WatchedFile#open()
 	 */
 	@Override
 	protected InputStream doOpenStream() throws IOException {
@@ -67,7 +67,7 @@ class DefaultResource extends BaseResource implements Closeable {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see ch.sourcepond.utils.fileobserver.impl.WatchedFile#open()
+	 * @see ch.sourcepond.utils.fileobserver.obsolete.WatchedFile#open()
 	 */
 	@Override
 	public final FileChannel openChannel() throws IOException {

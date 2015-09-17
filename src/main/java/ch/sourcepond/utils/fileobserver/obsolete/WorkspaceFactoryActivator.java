@@ -11,42 +11,34 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.*/
-package ch.sourcepond.utils.fileobserver.impl;
+package ch.sourcepond.utils.fileobserver.obsolete;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
-import java.io.IOException;
-
 import org.slf4j.Logger;
 
-import ch.sourcepond.utils.fileobserver.Workspace;
+import ch.sourcepond.utils.fileobserver.WorkspaceFactory;
+import ch.sourcepond.utils.fileobserver.commons.BaseWorkspaceFactoryActivator;
 
 /**
- * @author rolandhauser
  *
  */
-final class WorkspaceShutdownHook extends Thread {
-	private static final Logger LOG = getLogger(WorkspaceShutdownHook.class);
-	private final Workspace workspace;
+public final class WorkspaceFactoryActivator extends BaseWorkspaceFactoryActivator {
+	private static final Logger LOG = getLogger(WorkspaceFactoryActivator.class);
 
-	/**
-	 * @param pWorkspace
-	 */
-	WorkspaceShutdownHook(final Workspace pWorkspace) {
-		workspace = pWorkspace;
+	protected WorkspaceFactoryActivator(final WorkspaceFactory pFactory) {
+		super(pFactory);
 	}
 
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see java.lang.Thread#run()
+	 * @see
+	 * ch.sourcepond.utils.fileobserver.commons.BaseWorkspaceFactoryActivator#
+	 * getLog()
 	 */
 	@Override
-	public void run() {
-		try {
-			workspace.close();
-		} catch (final IOException e) {
-			LOG.warn(e.getMessage(), e);
-		}
+	protected Logger getLog() {
+		return LOG;
 	}
 }

@@ -1,4 +1,4 @@
-package ch.sourcepond.utils.fileobserver.impl;
+package ch.sourcepond.utils.fileobserver.obsolete;
 
 import static ch.sourcepond.utils.fileobserver.ResourceEvent.Type.RESOURCE_CREATED;
 import static ch.sourcepond.utils.fileobserver.ResourceEvent.Type.RESOURCE_DELETED;
@@ -26,6 +26,7 @@ import org.mockito.Mockito;
 
 import ch.sourcepond.utils.fileobserver.ResourceEvent.Type;
 import ch.sourcepond.utils.fileobserver.commons.CloseState;
+import ch.sourcepond.utils.fileobserver.obsolete.DefaultResource;
 
 /**
  *
@@ -56,7 +57,7 @@ public class RunDefaultWorkspaceTest extends BaseDefaultWorkspaceTest {
 	 * (non-Javadoc)
 	 * 
 	 * @see
-	 * ch.sourcepond.utils.fileobserver.impl.BaseDefaultWorkspaceTest#newState()
+	 * ch.sourcepond.utils.fileobserver.obsolete.BaseDefaultWorkspaceTest#newState()
 	 */
 	@Override
 	protected CloseState newState() {
