@@ -38,6 +38,10 @@
 			<groupId>ch.sourcepond.utils</groupId>
 			<artifactId>fileobserver-commons</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
+		</dependency>
 
 		<!-- OSGi integration testing -->
 		<dependency>

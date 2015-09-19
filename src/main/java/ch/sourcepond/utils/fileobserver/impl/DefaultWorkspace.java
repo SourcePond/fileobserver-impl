@@ -3,6 +3,7 @@ package ch.sourcepond.utils.fileobserver.impl;
 import static ch.sourcepond.io.fileobserver.ResourceEvent.Type.RESOURCE_CREATED;
 import static ch.sourcepond.io.fileobserver.ResourceEvent.Type.RESOURCE_DELETED;
 import static ch.sourcepond.io.fileobserver.ResourceEvent.Type.RESOURCE_MODIFIED;
+import static ch.sourcepond.io.fileobserver.ResourceFilter.DISPATCH_ALL;
 import static java.nio.file.Files.isDirectory;
 import static java.nio.file.Files.walkFileTree;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
@@ -29,7 +30,6 @@ import java.nio.file.attribute.BasicFileAttributes;
 import org.slf4j.Logger;
 
 import ch.sourcepond.io.fileobserver.ResourceChangeListener;
-import ch.sourcepond.io.fileobserver.ResourceEvent;
 import ch.sourcepond.io.fileobserver.ResourceEvent.Type;
 import ch.sourcepond.io.fileobserver.ResourceFilter;
 import ch.sourcepond.io.fileobserver.Workspace;
@@ -40,15 +40,18 @@ import ch.sourcepond.io.fileobserver.Workspace;
  */
 class DefaultWorkspace extends SimpleFileVisitor<Path>implements Workspace, Runnable {
 	private static final Logger LOG = getLogger(DefaultWorkspace.class);
-	private final Path directory;
+	private final WorkspaceDirectory directory;
+	private final EventReplayFactory replayFactory;
 	private final ResourceEventDispatcher dispatcher;
 	private final ListenerRegistry registry;
 	private final WatchService watchService;
 	private volatile boolean closed;
 
-	public DefaultWorkspace(final Path pDirectory, final ResourceEventDispatcher pDispatcher,
-			final ListenerRegistry pRegistry, final WatchService pWatchService) {
+	public DefaultWorkspace(final WorkspaceDirectory pDirectory, final EventReplayFactory pReplayFactory,
+			final ResourceEventDispatcher pDispatcher, final ListenerRegistry pRegistry,
+			final WatchService pWatchService) {
 		directory = pDirectory;
+		replayFactory = pReplayFactory;
 		dispatcher = pDispatcher;
 		registry = pRegistry;
 		watchService = pWatchService;
@@ -85,13 +88,22 @@ class DefaultWorkspace extends SimpleFileVisitor<Path>implements Workspace, Runn
 	@Override
 	public void addListener(final ResourceChangeListener pListener) {
 		checkNotClosed();
-		addListener(pListener, ResourceFilter.DISPATCH_ALL);
+		addListener(pListener, DISPATCH_ALL);
 	}
 
 	@Override
 	public void addListener(final ResourceChangeListener pListener, final ResourceFilter pFilter) {
 		checkNotClosed();
-		registry.addListener(pFilter, pListener);
+		if (registry.addListener(pFilter, pListener)) {
+			final EventReplay replay = replayFactory.newReplay(directory, pFilter, pListener);
+			try {
+				walkFileTree(directory.getPath(), replay);
+			} catch (final IOException e) {
+				if (LOG.isErrorEnabled()) {
+					LOG.error(e.getMessage(), e);
+				}
+			}
+		}
 	}
 
 	@Override
@@ -129,22 +141,10 @@ class DefaultWorkspace extends SimpleFileVisitor<Path>implements Workspace, Runn
 		checkNotClosed();
 
 		if (pReplaceExisting) {
-			Files.copy(pOriginContent, resolve(pPath), REPLACE_EXISTING);
+			Files.copy(pOriginContent, directory.resolve(pPath), REPLACE_EXISTING);
 		} else {
-			Files.copy(pOriginContent, resolve(pPath));
+			Files.copy(pOriginContent, directory.resolve(pPath));
 		}
-	}
-
-	/**
-	 * @param pPath
-	 * @return
-	 */
-	private Path resolve(final String[] pPath) {
-		Path current = directory;
-		for (final String sub : pPath) {
-			current = current.resolve(sub);
-		}
-		return current;
 	}
 
 	/**
@@ -186,24 +186,24 @@ class DefaultWorkspace extends SimpleFileVisitor<Path>implements Workspace, Runn
 
 					final Type typeOrNull = getTypeOrNull(kind);
 					if (typeOrNull != null) {
-						final Path absolutePath = directory.resolve((Path) event.context()).toAbsolutePath();
+						final Path context = (Path) event.context();
 
 						// If a new directory has been created, we have to
 						// traverse it to
 						// a) register the watch-service on sub-directories
 						// b) fire RESOURCE_CREATED events for contained
 						// files/sub-directories
-						final boolean isDirectory = isDirectory(absolutePath);
+						final boolean isDirectory = isDirectory(context);
 						if (isDirectory && RESOURCE_CREATED.equals(typeOrNull)) {
 							try {
-								walkFileTree(absolutePath, this);
+								walkFileTree(context, this);
 							} catch (final IOException e) {
 								if (LOG.isWarnEnabled()) {
-									LOG.warn("Exception occurred while registering sub-directory " + absolutePath, e);
+									LOG.warn("Exception occurred while registering sub-directory " + context, e);
 								}
 							}
 						} else {
-							fireResourceChangeEvent((Path) event.context(), typeOrNull, isDirectory);
+							dispatcher.fireResourceChangeEvent(directory, context, RESOURCE_CREATED, false);
 						}
 					}
 				}
@@ -225,7 +225,7 @@ class DefaultWorkspace extends SimpleFileVisitor<Path>implements Workspace, Runn
 	@Override
 	public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
 		dir.register(watchService, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
-		fireResourceChangeEvent(dir, RESOURCE_CREATED, true);
+		dispatcher.fireResourceChangeEvent(directory, dir, RESOURCE_CREATED, true);
 		return super.preVisitDirectory(dir, attrs);
 	}
 
@@ -237,19 +237,8 @@ class DefaultWorkspace extends SimpleFileVisitor<Path>implements Workspace, Runn
 	 */
 	@Override
 	public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
-		fireResourceChangeEvent(file, RESOURCE_CREATED, false);
+		dispatcher.fireResourceChangeEvent(directory, file, RESOURCE_CREATED, false);
 		return super.visitFile(file, attrs);
-	}
-
-	/**
-	 * @param pPath
-	 * @param pType
-	 */
-	private void fireResourceChangeEvent(final Path pContextPath, final ResourceEvent.Type pEventType,
-			final boolean pIsDirectory) {
-		final Path absolutePath = directory.resolve(pContextPath).toAbsolutePath();
-		final Path relativePath = directory.relativize(absolutePath);
-		dispatcher.fireResourceChangeEvent(absolutePath, relativePath, pEventType, pIsDirectory);
 	}
 
 }
