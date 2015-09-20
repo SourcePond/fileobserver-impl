@@ -22,13 +22,13 @@ class ListenerRegistry {
 	 * @return
 	 */
 	boolean addListener(final ResourceFilter pFilter, final ResourceChangeListener pListener) {
-		if (listeners.put(pFilter, pListener)) {
-
-		}
-
-		return false;
+		return listeners.put(pFilter, pListener);
 	}
 
+	/**
+	 * @param pListener
+	 * @return
+	 */
 	Collection<ResourceChangeListener> getListeners(final ResourceFilter pListener) {
 
 		return null;
@@ -37,5 +37,11 @@ class ListenerRegistry {
 	void removeListener(final ResourceChangeListener pListener) {
 		// TODO Auto-generated method stub
 
+	}
+
+	public Collection<ResourceFilter> getFilters() {
+		// TODO Auto-generated method stub
+
+		return null;
 	}
 }

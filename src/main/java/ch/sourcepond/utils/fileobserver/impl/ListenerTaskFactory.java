@@ -9,6 +9,11 @@ import ch.sourcepond.io.fileobserver.ResourceEvent;
  */
 public class ListenerTaskFactory {
 
+	/**
+	 * @param pListener
+	 * @param pEvent
+	 * @return
+	 */
 	public ListenerTask newTask(final ResourceChangeListener pListener, final ResourceEvent pEvent) {
 		return new ListenerTask(pListener, pEvent);
 	}

@@ -25,8 +25,8 @@ class EventReplay extends SimpleFileVisitor<Path> {
 	 * @param pFilter
 	 * @param pListener
 	 */
-	EventReplay(final WorkspaceDirectory pDirectory, final EventDispatcher pDispatcher,
-			final ResourceFilter pFilter, final ResourceChangeListener pListener) {
+	EventReplay(final WorkspaceDirectory pDirectory, final EventDispatcher pDispatcher, final ResourceFilter pFilter,
+			final ResourceChangeListener pListener) {
 		directory = pDirectory;
 		dispatcher = pDispatcher;
 		filter = pFilter;
@@ -41,7 +41,7 @@ class EventReplay extends SimpleFileVisitor<Path> {
 	 */
 	@Override
 	public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
-		dispatcher.fireResourceChangeEvent(filter, listener, directory, dir, LISTENER_ADDED, true);
+		dispatcher.fireResourceChangeEvent(filter, listener, directory, dir, LISTENER_ADDED);
 		return super.preVisitDirectory(dir, attrs);
 	}
 
@@ -53,7 +53,7 @@ class EventReplay extends SimpleFileVisitor<Path> {
 	 */
 	@Override
 	public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
-		dispatcher.fireResourceChangeEvent(filter, listener, directory, file, LISTENER_ADDED, false);
+		dispatcher.fireResourceChangeEvent(filter, listener, directory, file, LISTENER_ADDED);
 		return super.visitFile(file, attrs);
 	}
 

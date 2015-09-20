@@ -48,8 +48,7 @@ class DefaultWorkspace extends SimpleFileVisitor<Path>implements Workspace, Runn
 	private volatile boolean closed;
 
 	public DefaultWorkspace(final WorkspaceDirectory pDirectory, final EventReplayFactory pReplayFactory,
-			final EventDispatcher pDispatcher, final ListenerRegistry pRegistry,
-			final WatchService pWatchService) {
+			final EventDispatcher pDispatcher, final ListenerRegistry pRegistry, final WatchService pWatchService) {
 		directory = pDirectory;
 		replayFactory = pReplayFactory;
 		dispatcher = pDispatcher;
@@ -193,8 +192,7 @@ class DefaultWorkspace extends SimpleFileVisitor<Path>implements Workspace, Runn
 						// a) register the watch-service on sub-directories
 						// b) fire RESOURCE_CREATED events for contained
 						// files/sub-directories
-						final boolean isDirectory = isDirectory(context);
-						if (isDirectory && RESOURCE_CREATED.equals(typeOrNull)) {
+						if (isDirectory(context) && RESOURCE_CREATED.equals(typeOrNull)) {
 							try {
 								walkFileTree(context, this);
 							} catch (final IOException e) {
@@ -203,7 +201,7 @@ class DefaultWorkspace extends SimpleFileVisitor<Path>implements Workspace, Runn
 								}
 							}
 						} else {
-							dispatcher.fireResourceChangeEvent(directory, context, RESOURCE_CREATED, false);
+							dispatcher.fireResourceChangeEvent(directory, context, RESOURCE_CREATED);
 						}
 					}
 				}
@@ -225,7 +223,7 @@ class DefaultWorkspace extends SimpleFileVisitor<Path>implements Workspace, Runn
 	@Override
 	public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
 		dir.register(watchService, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
-		dispatcher.fireResourceChangeEvent(directory, dir, RESOURCE_CREATED, true);
+		dispatcher.fireResourceChangeEvent(directory, dir, RESOURCE_CREATED);
 		return super.preVisitDirectory(dir, attrs);
 	}
 
@@ -237,7 +235,7 @@ class DefaultWorkspace extends SimpleFileVisitor<Path>implements Workspace, Runn
 	 */
 	@Override
 	public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
-		dispatcher.fireResourceChangeEvent(directory, file, RESOURCE_CREATED, false);
+		dispatcher.fireResourceChangeEvent(directory, file, RESOURCE_CREATED);
 		return super.visitFile(file, attrs);
 	}
 

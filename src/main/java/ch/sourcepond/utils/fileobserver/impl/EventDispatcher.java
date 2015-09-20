@@ -1,7 +1,19 @@
 package ch.sourcepond.utils.fileobserver.impl;
 
-import java.nio.file.Path;
+import static java.nio.file.Files.isDirectory;
+import static java.nio.file.Files.isRegularFile;
+import static org.slf4j.LoggerFactory.getLogger;
 
+import java.nio.file.Path;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executor;
+
+import org.slf4j.Logger;
+
+import ch.sourcepond.io.checksum.ChecksumBuilder;
+import ch.sourcepond.io.checksum.ChecksumException;
+import ch.sourcepond.io.checksum.PathChecksum;
 import ch.sourcepond.io.fileobserver.ResourceChangeListener;
 import ch.sourcepond.io.fileobserver.ResourceEvent;
 import ch.sourcepond.io.fileobserver.ResourceFilter;
@@ -11,10 +23,26 @@ import ch.sourcepond.io.fileobserver.ResourceFilter;
  *
  */
 class EventDispatcher {
+	private static final Logger LOG = getLogger(EventDispatcher.class);
+	private final ConcurrentMap<Path, PathChecksum> checksums = new ConcurrentHashMap<>();
+	private final Executor calculationExecutor;
+	private final Executor listenerExecutor;
+	private final ChecksumBuilder checksumBuilder;
 	private final ListenerRegistry registry;
+	private final ListenerTaskFactory taskFactory;
 
-	EventDispatcher(final ListenerRegistry pRegistry) {
+	/**
+	 * @param pChecksumFactory
+	 * @param pRegistry
+	 */
+	EventDispatcher(final Executor pCalculationExecutor, final Executor pListenerExecutor,
+			final ChecksumBuilder pChecksumBuilder, final ListenerRegistry pRegistry,
+			final ListenerTaskFactory pTaskFactory) {
+		calculationExecutor = pCalculationExecutor;
+		listenerExecutor = pListenerExecutor;
+		checksumBuilder = pChecksumBuilder;
 		registry = pRegistry;
+		taskFactory = pTaskFactory;
 	}
 
 	/**
@@ -22,17 +50,78 @@ class EventDispatcher {
 	 * @param pEventType
 	 */
 	void fireResourceChangeEvent(final WorkspaceDirectory pDirectory, final Path pContext,
-			final ResourceEvent.Type pEventType, final boolean pIsDirectory) {
-
-	}
-
-	void fireResourceChangeEvent(final ResourceFilter pFilter, final ResourceChangeListener pListener,
-			final WorkspaceDirectory pDirectory, final Path pContext, final ResourceEvent.Type pEventType,
-			final boolean pIsDirectory) {
+			final ResourceEvent.Type pEventType) {
 		final Path absolutePath = pDirectory.toAbsolutePath(pContext);
 		final Path relativePath = pDirectory.relativize(absolutePath);
-
 		final ResourceEvent event = new ResourceEvent(absolutePath, relativePath, pEventType);
+		for (final ResourceFilter filter : registry.getFilters()) {
+			for (final ResourceChangeListener listener : registry.getListeners(filter)) {
+				fireResourceChangeEvent(filter, listener, event);
+			}
+		}
+	}
 
+	/**
+	 * @param pFilter
+	 * @param pListener
+	 * @param pDirectory
+	 * @param pContext
+	 * @param pEventType
+	 */
+	void fireResourceChangeEvent(final ResourceFilter pFilter, final ResourceChangeListener pListener,
+			final WorkspaceDirectory pDirectory, final Path pContext, final ResourceEvent.Type pEventType) {
+		final Path absolutePath = pDirectory.toAbsolutePath(pContext);
+		final Path relativePath = pDirectory.relativize(absolutePath);
+		fireResourceChangeEvent(pFilter, pListener, new ResourceEvent(absolutePath, relativePath, pEventType));
+	}
+
+	/**
+	 * @param pPath
+	 * @return
+	 * @throws ChecksumException
+	 */
+	private PathChecksum getChecksum(final Path pPath) throws ChecksumException {
+		PathChecksum checksum = checksums.get(pPath);
+		if (checksum == null) {
+			checksum = checksumBuilder.create(pPath, calculationExecutor);
+			if (checksums.putIfAbsent(pPath, checksum) != null) {
+				checksum.cancel();
+			}
+		} else {
+			checksum.update();
+		}
+		return checksum;
+	}
+
+	/**
+	 * @param pAbsoluteFile
+	 * @return
+	 */
+	private boolean hasContentChanged(final Path pAbsoluteFile) {
+		try {
+			return getChecksum(pAbsoluteFile).equalsPrevious();
+		} catch (final ChecksumException e) {
+			if (LOG.isErrorEnabled()) {
+				LOG.error("Event discarded because an exception has occurred!", e);
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * @param pFilter
+	 * @param pListener
+	 * @param pEvent
+	 */
+	private void fireResourceChangeEvent(final ResourceFilter pFilter, final ResourceChangeListener pListener,
+			final ResourceEvent pEvent) {
+		if (pFilter.isDispatched(pEvent)) {
+			final Path absolutePath = pEvent.getSource();
+			if (isDirectory(absolutePath) || (isRegularFile(absolutePath) && hasContentChanged(absolutePath))) {
+				for (final ResourceChangeListener listener : registry.getListeners(pFilter)) {
+					listenerExecutor.execute(taskFactory.newTask(listener, pEvent));
+				}
+			}
+		}
 	}
 }
