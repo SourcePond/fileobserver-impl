@@ -42,13 +42,13 @@ class DefaultWorkspace extends SimpleFileVisitor<Path>implements Workspace, Runn
 	private static final Logger LOG = getLogger(DefaultWorkspace.class);
 	private final WorkspaceDirectory directory;
 	private final EventReplayFactory replayFactory;
-	private final ResourceEventDispatcher dispatcher;
+	private final EventDispatcher dispatcher;
 	private final ListenerRegistry registry;
 	private final WatchService watchService;
 	private volatile boolean closed;
 
 	public DefaultWorkspace(final WorkspaceDirectory pDirectory, final EventReplayFactory pReplayFactory,
-			final ResourceEventDispatcher pDispatcher, final ListenerRegistry pRegistry,
+			final EventDispatcher pDispatcher, final ListenerRegistry pRegistry,
 			final WatchService pWatchService) {
 		directory = pDirectory;
 		replayFactory = pReplayFactory;

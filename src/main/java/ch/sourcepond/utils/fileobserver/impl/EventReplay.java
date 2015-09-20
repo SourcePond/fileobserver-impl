@@ -17,7 +17,7 @@ import ch.sourcepond.io.fileobserver.ResourceFilter;
  */
 class EventReplay extends SimpleFileVisitor<Path> {
 	private final WorkspaceDirectory directory;
-	private final ResourceEventDispatcher dispatcher;
+	private final EventDispatcher dispatcher;
 	private final ResourceFilter filter;
 	private final ResourceChangeListener listener;
 
@@ -25,7 +25,7 @@ class EventReplay extends SimpleFileVisitor<Path> {
 	 * @param pFilter
 	 * @param pListener
 	 */
-	EventReplay(final WorkspaceDirectory pDirectory, final ResourceEventDispatcher pDispatcher,
+	EventReplay(final WorkspaceDirectory pDirectory, final EventDispatcher pDispatcher,
 			final ResourceFilter pFilter, final ResourceChangeListener pListener) {
 		directory = pDirectory;
 		dispatcher = pDispatcher;

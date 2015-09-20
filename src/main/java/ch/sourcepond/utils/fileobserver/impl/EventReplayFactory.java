@@ -4,9 +4,9 @@ import ch.sourcepond.io.fileobserver.ResourceChangeListener;
 import ch.sourcepond.io.fileobserver.ResourceFilter;
 
 public class EventReplayFactory {
-	private final ResourceEventDispatcher dispatcher;
+	private final EventDispatcher dispatcher;
 
-	EventReplayFactory(final ResourceEventDispatcher pDispatcher) {
+	EventReplayFactory(final EventDispatcher pDispatcher) {
 		dispatcher = pDispatcher;
 	}
 

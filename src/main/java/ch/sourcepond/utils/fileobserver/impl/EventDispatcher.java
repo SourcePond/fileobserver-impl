@@ -10,10 +10,10 @@ import ch.sourcepond.io.fileobserver.ResourceFilter;
  * @author rolandhauser
  *
  */
-class ResourceEventDispatcher {
+class EventDispatcher {
 	private final ListenerRegistry registry;
 
-	ResourceEventDispatcher(final ListenerRegistry pRegistry) {
+	EventDispatcher(final ListenerRegistry pRegistry) {
 		registry = pRegistry;
 	}
 
