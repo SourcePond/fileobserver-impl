@@ -16,31 +16,54 @@
 	</description>
 
 	<properties>
-		<fileobserver-commons.version>1.0.0-SNAPSHOT</fileobserver-commons.version>
+		<fileobserver-api.version>1.0.0-SNAPSHOT</fileobserver-api.version>
+		<checksum-api.version>1.0.0-SNAPSHOT</checksum-api.version>
+		<checksum-impl.version>1.0.0-SNAPSHOT</checksum-impl.version>
 	</properties>
 
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
-				<groupId>ch.sourcepond.utils</groupId>
-				<artifactId>fileobserver-commons</artifactId>
-				<version>${fileobserver-commons.version}</version>
+				<groupId>ch.sourcepond.io</groupId>
+				<artifactId>fileobserver-api</artifactId>
+				<version>${fileobserver-api.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>ch.sourcepond.io</groupId>
+				<artifactId>checksum-api</artifactId>
+				<version>${checksum-api.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>ch.sourcepond.io</groupId>
+				<artifactId>checksum-impl</artifactId>
+				<version>${checksum-impl.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
 
 	<dependencies>
 		<dependency>
+			<groupId>ch.sourcepond.io</groupId>
+			<artifactId>fileobserver-api</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>ch.sourcepond.io</groupId>
+			<artifactId>checksum-api</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>org.osgi</groupId>
 			<artifactId>org.osgi.core</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>ch.sourcepond.utils</groupId>
-			<artifactId>fileobserver-commons</artifactId>
-		</dependency>
-		<dependency>
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
+		</dependency>
+
+		<!-- Integration test common -->
+		<dependency>
+			<scope>test</scope>
+			<groupId>ch.sourcepond.io</groupId>
+			<artifactId>checksum-impl</artifactId>
 		</dependency>
 
 		<!-- OSGi integration testing -->
