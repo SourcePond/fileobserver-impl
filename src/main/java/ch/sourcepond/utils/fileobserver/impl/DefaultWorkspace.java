@@ -239,10 +239,13 @@ class DefaultWorkspace extends SimpleFileVisitor<Path>implements Workspace, Runn
 		return super.visitFile(file, attrs);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#finalize()
+	 */
 	@Override
 	protected void finalize() throws Throwable {
 		close();
-		super.finalize();
 	}
-
 }
