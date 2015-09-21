@@ -13,7 +13,7 @@ import org.slf4j.Logger;
 
 import ch.sourcepond.io.checksum.ChecksumBuilder;
 import ch.sourcepond.io.checksum.ChecksumException;
-import ch.sourcepond.io.checksum.PathChecksum;
+import ch.sourcepond.io.checksum.UpdatableChecksum;
 import ch.sourcepond.io.fileobserver.ResourceChangeListener;
 import ch.sourcepond.io.fileobserver.ResourceEvent;
 import ch.sourcepond.io.fileobserver.ResourceFilter;
@@ -24,8 +24,7 @@ import ch.sourcepond.io.fileobserver.ResourceFilter;
  */
 class EventDispatcher {
 	private static final Logger LOG = getLogger(EventDispatcher.class);
-	private final ConcurrentMap<Path, PathChecksum> checksums = new ConcurrentHashMap<>();
-	private final Executor calculationExecutor;
+	private final ConcurrentMap<Path, UpdatableChecksum<Path>> checksums = new ConcurrentHashMap<>();
 	private final Executor listenerExecutor;
 	private final ChecksumBuilder checksumBuilder;
 	private final ListenerRegistry registry;
@@ -35,10 +34,8 @@ class EventDispatcher {
 	 * @param pChecksumFactory
 	 * @param pRegistry
 	 */
-	EventDispatcher(final Executor pCalculationExecutor, final Executor pListenerExecutor,
-			final ChecksumBuilder pChecksumBuilder, final ListenerRegistry pRegistry,
-			final ListenerTaskFactory pTaskFactory) {
-		calculationExecutor = pCalculationExecutor;
+	EventDispatcher(final Executor pListenerExecutor, final ChecksumBuilder pChecksumBuilder,
+			final ListenerRegistry pRegistry, final ListenerTaskFactory pTaskFactory) {
 		listenerExecutor = pListenerExecutor;
 		checksumBuilder = pChecksumBuilder;
 		registry = pRegistry;
@@ -80,10 +77,10 @@ class EventDispatcher {
 	 * @return
 	 * @throws ChecksumException
 	 */
-	private PathChecksum getChecksum(final Path pPath) throws ChecksumException {
-		PathChecksum checksum = checksums.get(pPath);
+	private UpdatableChecksum<Path> getChecksum(final Path pPath) throws ChecksumException {
+		UpdatableChecksum<Path> checksum = checksums.get(pPath);
 		if (checksum == null) {
-			checksum = checksumBuilder.create(pPath, calculationExecutor);
+			checksum = checksumBuilder.create(pPath);
 			if (checksums.putIfAbsent(pPath, checksum) != null) {
 				checksum.cancel();
 			}

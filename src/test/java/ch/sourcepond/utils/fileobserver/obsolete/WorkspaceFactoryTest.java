@@ -46,7 +46,7 @@ public class WorkspaceFactoryTest {
 	 */
 	@Before
 	public void setup() throws Exception {
-		// when(factory.create(activator, executor, fs,
+		// when(builder.create(activator, executor, fs,
 		// WORKSPACE_PATH)).thenReturn(workspace);
 		when(context.registerService(WorkspaceFactory.class, activator, null)).thenReturn(registration);
 	}
