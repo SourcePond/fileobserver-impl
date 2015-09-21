@@ -11,7 +11,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.*/
-package ch.sourcepond.utils.fileobserver.impl;
+package ch.sourcepond.utils.fileobserver.impl.replay;
 
 import static ch.sourcepond.io.fileobserver.ResourceEvent.Type.LISTENER_ADDED;
 
@@ -23,12 +23,14 @@ import java.nio.file.attribute.BasicFileAttributes;
 
 import ch.sourcepond.io.fileobserver.ResourceChangeListener;
 import ch.sourcepond.io.fileobserver.ResourceFilter;
+import ch.sourcepond.utils.fileobserver.impl.WorkspaceDirectory;
+import ch.sourcepond.utils.fileobserver.impl.dispatcher.EventDispatcher;
 
 /**
  * @author rolandhauser
  *
  */
-class EventReplay extends SimpleFileVisitor<Path> {
+final class EventReplay extends SimpleFileVisitor<Path> {
 	private final WorkspaceDirectory directory;
 	private final EventDispatcher dispatcher;
 	private final ResourceFilter filter;

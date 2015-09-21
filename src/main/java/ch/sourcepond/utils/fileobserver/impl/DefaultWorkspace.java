@@ -31,6 +31,7 @@ import java.io.InputStream;
 import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileVisitResult;
+import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
@@ -46,6 +47,9 @@ import ch.sourcepond.io.fileobserver.ResourceChangeListener;
 import ch.sourcepond.io.fileobserver.ResourceEvent.Type;
 import ch.sourcepond.io.fileobserver.ResourceFilter;
 import ch.sourcepond.io.fileobserver.Workspace;
+import ch.sourcepond.utils.fileobserver.impl.dispatcher.EventDispatcher;
+import ch.sourcepond.utils.fileobserver.impl.listener.ListenerRegistry;
+import ch.sourcepond.utils.fileobserver.impl.replay.EventReplayFactory;
 
 /**
  * Default implementation of the {@link Workspace} interface.
@@ -61,12 +65,12 @@ class DefaultWorkspace extends SimpleFileVisitor<Path>implements Workspace, Runn
 	private volatile boolean closed;
 
 	public DefaultWorkspace(final WorkspaceDirectory pDirectory, final EventReplayFactory pReplayFactory,
-			final EventDispatcher pDispatcher, final ListenerRegistry pRegistry, final WatchService pWatchService) {
+			final EventDispatcher pDispatcher, final ListenerRegistry pRegistry) throws IOException {
 		directory = pDirectory;
 		replayFactory = pReplayFactory;
 		dispatcher = pDispatcher;
 		registry = pRegistry;
-		watchService = pWatchService;
+		watchService = pDirectory.newWatchService();
 	}
 
 	/*
@@ -107,7 +111,7 @@ class DefaultWorkspace extends SimpleFileVisitor<Path>implements Workspace, Runn
 	public void addListener(final ResourceChangeListener pListener, final ResourceFilter pFilter) {
 		checkNotClosed();
 		if (registry.addListener(pFilter, pListener)) {
-			final EventReplay replay = replayFactory.newReplay(directory, pFilter, pListener);
+			final FileVisitor<Path> replay = replayFactory.newReplay(directory, pFilter, pListener);
 			try {
 				walkFileTree(directory.getPath(), replay);
 			} catch (final IOException e) {

@@ -13,24 +13,37 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.utils.fileobserver.impl;
 
+import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.WatchService;
 
 /**
  * @author rolandhauser
  *
  */
-class WorkspaceDirectory {
+public class WorkspaceDirectory {
 	private final Path directory;
 
+	/**
+	 * @param pDirectory
+	 */
 	WorkspaceDirectory(final Path pDirectory) {
 		directory = pDirectory;
 	}
 
-	Path toAbsolutePath(final Path pOther) {
+	/**
+	 * @param pOther
+	 * @return
+	 */
+	public Path toAbsolutePath(final Path pOther) {
 		return directory.resolve(pOther).toAbsolutePath();
 	}
 
-	Path relativize(final Path pAbsolutePath) {
+	/**
+	 * @param pAbsolutePath
+	 * @return
+	 */
+	public Path relativize(final Path pAbsolutePath) {
 		return directory.relativize(pAbsolutePath);
 	}
 
@@ -38,7 +51,7 @@ class WorkspaceDirectory {
 	 * @param pPath
 	 * @return
 	 */
-	Path resolve(final String[] pPath) {
+	public Path resolve(final String[] pPath) {
 		Path current = directory;
 		for (final String sub : pPath) {
 			current = current.resolve(sub);
@@ -46,8 +59,18 @@ class WorkspaceDirectory {
 		return current;
 	}
 
-	Path getPath() {
+	/**
+	 * @return
+	 */
+	public Path getPath() {
 		return directory;
 	}
 
+	/**
+	 * @return
+	 * @throws IOException
+	 */
+	public WatchService newWatchService() throws IOException {
+		return directory.getFileSystem().newWatchService();
+	}
 }

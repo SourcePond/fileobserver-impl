@@ -11,33 +11,23 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.*/
-package ch.sourcepond.utils.fileobserver.impl;
-
-import static org.slf4j.LoggerFactory.getLogger;
-
-import org.slf4j.Logger;
+package ch.sourcepond.utils.fileobserver.impl.dispatcher;
 
 import ch.sourcepond.io.fileobserver.ResourceChangeListener;
 import ch.sourcepond.io.fileobserver.ResourceEvent;
 
-public class ListenerTask implements Runnable {
-	private static final Logger LOG = getLogger(ListenerTask.class);
-	private final ResourceChangeListener listener;
-	private final ResourceEvent event;
+/**
+ * @author rolandhauser
+ *
+ */
+class DispatcherTaskFactory {
 
-	ListenerTask(final ResourceChangeListener pListener, final ResourceEvent pEvent) {
-		listener = pListener;
-		event = pEvent;
-	}
-
-	@Override
-	public void run() {
-		try {
-			listener.resourceChange(event);
-		} catch (final Exception e) {
-			if (LOG.isWarnEnabled()) {
-				LOG.warn(e.getMessage(), e);
-			}
-		}
+	/**
+	 * @param pListener
+	 * @param pEvent
+	 * @return
+	 */
+	DispatcherTask newTask(final ResourceChangeListener pListener, final ResourceEvent pEvent) {
+		return new DispatcherTask(pListener, pEvent);
 	}
 }

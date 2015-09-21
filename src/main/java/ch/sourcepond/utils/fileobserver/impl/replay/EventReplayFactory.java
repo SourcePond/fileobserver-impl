@@ -11,23 +11,27 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.*/
-package ch.sourcepond.utils.fileobserver.impl;
+package ch.sourcepond.utils.fileobserver.impl.replay;
+
+import java.nio.file.FileVisitor;
+import java.nio.file.Path;
 
 import ch.sourcepond.io.fileobserver.ResourceChangeListener;
-import ch.sourcepond.io.fileobserver.ResourceEvent;
+import ch.sourcepond.io.fileobserver.ResourceFilter;
+import ch.sourcepond.utils.fileobserver.impl.WorkspaceDirectory;
 
 /**
  * @author rolandhauser
  *
  */
-public class ListenerTaskFactory {
+public interface EventReplayFactory {
 
 	/**
+	 * @param pDirectory
+	 * @param pFilter
 	 * @param pListener
-	 * @param pEvent
 	 * @return
 	 */
-	public ListenerTask newTask(final ResourceChangeListener pListener, final ResourceEvent pEvent) {
-		return new ListenerTask(pListener, pEvent);
-	}
+	FileVisitor<Path> newReplay(WorkspaceDirectory pDirectory, ResourceFilter pFilter,
+			final ResourceChangeListener pListener);
 }

@@ -11,7 +11,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.*/
-package ch.sourcepond.utils.fileobserver.impl;
+package ch.sourcepond.utils.fileobserver.impl.listener;
 
 import static com.google.common.collect.HashMultimap.create;
 
@@ -26,7 +26,7 @@ import ch.sourcepond.io.fileobserver.ResourceFilter;
  * @author rolandhauser
  *
  */
-class ListenerRegistry {
+class DefaultListenerRegistry implements ListenerRegistry {
 	private final SetMultimap<ResourceFilter, ResourceChangeListener> listeners = create();
 
 	/**
@@ -34,7 +34,8 @@ class ListenerRegistry {
 	 * @param pListener
 	 * @return
 	 */
-	boolean addListener(final ResourceFilter pFilter, final ResourceChangeListener pListener) {
+	@Override
+	public boolean addListener(final ResourceFilter pFilter, final ResourceChangeListener pListener) {
 		return listeners.put(pFilter, pListener);
 	}
 
@@ -42,16 +43,19 @@ class ListenerRegistry {
 	 * @param pListener
 	 * @return
 	 */
-	Collection<ResourceChangeListener> getListeners(final ResourceFilter pListener) {
+	@Override
+	public Collection<ResourceChangeListener> getListeners(final ResourceFilter pListener) {
 
 		return null;
 	}
 
-	void removeListener(final ResourceChangeListener pListener) {
+	@Override
+	public void removeListener(final ResourceChangeListener pListener) {
 		// TODO Auto-generated method stub
 
 	}
 
+	@Override
 	public Collection<ResourceFilter> getFilters() {
 		// TODO Auto-generated method stub
 

@@ -11,7 +11,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.*/
-package ch.sourcepond.utils.fileobserver.impl;
+package ch.sourcepond.utils.fileobserver.impl.dispatcher;
 
 import static java.nio.file.Files.isDirectory;
 import static java.nio.file.Files.isRegularFile;
@@ -30,25 +30,27 @@ import ch.sourcepond.io.checksum.UpdatableChecksum;
 import ch.sourcepond.io.fileobserver.ResourceChangeListener;
 import ch.sourcepond.io.fileobserver.ResourceEvent;
 import ch.sourcepond.io.fileobserver.ResourceFilter;
+import ch.sourcepond.utils.fileobserver.impl.WorkspaceDirectory;
+import ch.sourcepond.utils.fileobserver.impl.listener.ListenerRegistry;
 
 /**
  * @author rolandhauser
  *
  */
-class EventDispatcher {
-	private static final Logger LOG = getLogger(EventDispatcher.class);
+class DefaultEventDispatcher implements EventDispatcher {
+	private static final Logger LOG = getLogger(DefaultEventDispatcher.class);
 	private final ConcurrentMap<Path, UpdatableChecksum<Path>> checksums = new ConcurrentHashMap<>();
 	private final Executor listenerExecutor;
 	private final ChecksumBuilder checksumBuilder;
 	private final ListenerRegistry registry;
-	private final ListenerTaskFactory taskFactory;
+	private final DispatcherTaskFactory taskFactory;
 
 	/**
 	 * @param pChecksumFactory
 	 * @param pRegistry
 	 */
-	EventDispatcher(final Executor pListenerExecutor, final ChecksumBuilder pChecksumBuilder,
-			final ListenerRegistry pRegistry, final ListenerTaskFactory pTaskFactory) {
+	DefaultEventDispatcher(final Executor pListenerExecutor, final ChecksumBuilder pChecksumBuilder,
+			final ListenerRegistry pRegistry, final DispatcherTaskFactory pTaskFactory) {
 		listenerExecutor = pListenerExecutor;
 		checksumBuilder = pChecksumBuilder;
 		registry = pRegistry;
@@ -59,7 +61,8 @@ class EventDispatcher {
 	 * @param pAbsolutePath
 	 * @param pEventType
 	 */
-	void fireResourceChangeEvent(final WorkspaceDirectory pDirectory, final Path pContext,
+	@Override
+	public void fireResourceChangeEvent(final WorkspaceDirectory pDirectory, final Path pContext,
 			final ResourceEvent.Type pEventType) {
 		final Path absolutePath = pDirectory.toAbsolutePath(pContext);
 		final Path relativePath = pDirectory.relativize(absolutePath);
@@ -78,7 +81,8 @@ class EventDispatcher {
 	 * @param pContext
 	 * @param pEventType
 	 */
-	void fireResourceChangeEvent(final ResourceFilter pFilter, final ResourceChangeListener pListener,
+	@Override
+	public void fireResourceChangeEvent(final ResourceFilter pFilter, final ResourceChangeListener pListener,
 			final WorkspaceDirectory pDirectory, final Path pContext, final ResourceEvent.Type pEventType) {
 		final Path absolutePath = pDirectory.toAbsolutePath(pContext);
 		final Path relativePath = pDirectory.relativize(absolutePath);
